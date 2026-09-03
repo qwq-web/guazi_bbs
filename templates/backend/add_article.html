@@ -1,0 +1,72 @@
+{% extends 'backend/base.html' %}
+{% comment %}新增文章 backend/add_article.html：文本框 markdown 或上传 .md 文件 + 分类 + 多选标签{% endcomment %}
+
+{% block content %}
+<div class="panel panel-default">
+    <div class="panel-heading"><strong>新增文章</strong></div>
+    <div class="panel-body">
+        {# enctype=multipart/form-data：支持上传 .md 文件 #}
+        <form id="articleForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>标题</label>
+                <input type="text" name="title" class="form-control" placeholder="请输入文章标题">
+            </div>
+
+            <div class="form-group">
+                <label>内容（Markdown 文本）</label>
+                <textarea name="content" class="form-control" rows="15"
+                          placeholder="直接输入 Markdown 文本，或下方上传 .md 文件"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>或上传 .md 文件</label>
+                <input type="file" name="md_file" accept=".md">
+            </div>
+
+            <div class="form-group">
+                <label>分类</label>
+                <select name="category" class="form-control">
+                    {% for c in categories %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>标签（按住 Ctrl 多选）</label>
+                <select name="tags" class="form-control" multiple size="5">
+                    {% for t in tags %}
+                        <option value="{{ t.id }}">{{ t.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="saveBtn">发布</button>
+            <a href="/backend/" class="btn btn-default">返回</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script>
+// 发布：FormData + AJAX（含可能的 .md 文件）
+    $('#saveBtn').click(function () {
+        let formData = new FormData($('#articleForm')[0]);
+        $.ajax({
+            url: '/backend/add_article/', type: 'post',
+            data: formData, processData: false, contentType: false,
+            success: function (res) {
+                if (res.code === 200) {
+                    alert(res.msg);
+                    location.href = res.url;
+                } else {
+                    alert(res.msg);
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,123 @@
+/* Django-BBS 扁平简洁全局样式（配合 Bootstrap3） */
+body {
+    background: #f5f6f8;
+    font-family: "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #333;
+}
+.navbar-bbs {
+    background: #2f3b4c;
+    border: none;
+    border-radius: 0;
+    margin-bottom: 20px;
+}
+.navbar-bbs .navbar-brand,
+.navbar-bbs .navbar-nav > li > a {
+    color: #fff;
+}
+.navbar-bbs .navbar-nav > li > a:hover {
+    background: #3d4d64;
+    color: #fff;
+}
+.panel {
+    border-radius: 2px;
+    box-shadow: none;
+    border-color: #e5e5e5;
+}
+.panel-heading {
+    background: #fff !important;
+    font-weight: 600;
+}
+.err {
+    color: #d9534f;
+    font-size: 12px;
+}
+.ok {
+    color: #5cb85c;
+    font-size: 12px;
+}
+.article-item {
+    padding: 16px 0;
+    border-bottom: 1px solid #eee;
+}
+.article-item h3 {
+    margin-top: 0;
+    font-size: 20px;
+}
+.article-item h3 a {
+    color: #2f3b4c;
+}
+.article-meta {
+    color: #999;
+    font-size: 12px;
+}
+.article-meta img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+.article-body {
+    background: #fff;
+    padding: 28px 32px;
+    line-height: 1.8;
+    font-size: 16px;
+}
+.article-body h1,
+.article-title {
+    font-size: 28px;
+    margin-bottom: 16px;
+}
+.article-body p {
+    margin-bottom: 14px;
+}
+.article-body pre,
+.article-body code {
+    background: #f7f7f9;
+    border-radius: 2px;
+}
+.article-body blockquote {
+    border-left: 4px solid #ccc;
+    padding-left: 12px;
+    color: #666;
+}
+.article-body table {
+    width: 100%;
+}
+.avatar-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #ddd;
+}
+.comment-item {
+    padding: 12px 0;
+    border-bottom: 1px dashed #eee;
+}
+.comment-item img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+}
+.comment-child {
+    margin-left: 48px;
+    background: #fafafa;
+    padding: 8px 12px;
+}
+.footer-bbs {
+    text-align: center;
+    color: #999;
+    padding: 24px 0;
+    font-size: 12px;
+}
+.tab-pane {
+    padding-top: 16px;
+}
+@media (max-width: 768px) {
+    .article-body {
+        padding: 16px;
+    }
+    .comment-child {
+        margin-left: 12px;
+    }
+}

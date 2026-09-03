@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}修改头像 - BBS博客系统{% endblock %}
+
+{% block content %}
+<div class="panel panel-primary">
+    <div class="panel-heading"><h3 class="panel-title">修改头像</h3></div>
+    <div class="panel-body">
+        <form id="avatarForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>当前头像</label>
+                <div>
+                    <img id="avatarPreview" src="{{ request.user.avatar.url }}"
+                         width="120" height="120" class="img-thumbnail">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>选择新头像</label>
+                <input type="file" name="avatar" id="id_avatar" accept="image/*">
+                <span class="text-danger" id="error_avatar"></span>
+            </div>
+            <button type="button" class="btn btn-primary" id="saveAvatarBtn">保存</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script>
+    $(function () {
+        $('#id_avatar').change(function () {
+            var file = this.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#avatarPreview').attr('src', e.target.result);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        $('#saveAvatarBtn').click(function () {
+            $('#error_avatar').text('');
+            var formData = new FormData($('#avatarForm')[0]);
+            $.ajax({
+                url: '/set_avatar/',
+                type: 'post',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.code === 200) {
+                        alert(res.msg);
+                        $('#avatarPreview').attr('src', '{{ request.user.avatar.url }}?t=' + Date.now());
+                    } else {
+                        $.each(res.msg, function (k, v) {
+                            $('#error_' + k).text(v);
+                        });
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

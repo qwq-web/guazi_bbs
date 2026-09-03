@@ -1,0 +1,73 @@
+{% extends 'backend/base.html' %}
+{% comment %}标签管理 backend/tag.html：列表 + 新增 + 编辑/删除（全部 AJAX）{% endcomment %}
+
+{% block content %}
+<div class="panel panel-default">
+    <div class="panel-heading"><strong>标签管理</strong></div>
+    <div class="panel-body">
+        {# 新增标签 #}
+        <div class="form-inline" style="margin-bottom:15px;">
+            <input type="text" id="tagName" class="form-control" placeholder="新标签名">
+            <button class="btn btn-primary" id="addBtn">新增</button>
+        </div>
+
+        <table class="table table-striped table-hover">
+            <thead><tr><th>ID</th><th>标签名</th><th>操作</th></tr></thead>
+            <tbody>
+            {% for t in tags %}
+                <tr>
+                    <td>{{ t.id }}</td>
+                    <td>{{ t.name }}</td>
+                    <td>
+                        <button class="btn btn-default btn-xs editBtn"
+                                data-id="{{ t.id }}" data-name="{{ t.name }}">编辑</button>
+                        <button class="btn btn-danger btn-xs delBtn" data-id="{{ t.id }}">删除</button>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="3" class="text-center text-muted">暂无标签</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script>
+    // 新增标签
+    $('#addBtn').click(function () {
+        let name = $('#tagName').val().trim();
+        if (!name) { alert('标签名不能为空'); return; }
+        $.post('/backend/tag/', {action: 'add', name: name}, function (res) {
+            if (res.code === 200) { alert(res.msg); location.reload(); }
+            else { alert(res.msg); }
+        });
+    });
+
+    // 编辑标签
+    $('.editBtn').click(function () {
+        let id = $(this).data('id');
+        let old = $(this).data('name');
+        let name = prompt('修改标签名：', old);
+        if (name === null) return;
+        name = name.trim();
+        if (!name) { alert('标签名不能为空'); return; }
+        $.post('/backend/tag/', {action: 'edit', id: id, name: name}, function (res) {
+            if (res.code === 200) { alert(res.msg); location.reload(); }
+            else { alert(res.msg); }
+        });
+    });
+
+    // 删除标签
+    $('.delBtn').click(function () {
+        if (!confirm('确认删除该标签？')) return;
+        let id = $(this).data('id');
+        $.post('/backend/tag/', {action: 'del', id: id}, function (res) {
+            if (res.code === 200) { alert(res.msg); location.reload(); }
+            else { alert(res.msg); }
+        });
+    });
+</script>
+{% endblock %}

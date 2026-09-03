@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% comment %}首页 index.html：
+  左：全站分类（前10+查看更多） + 我赞过/我评论过 快捷入口
+  中：文章列表（上中下：标题 / 头像+摘要 / 作者+赞评）
+  右：搜索 / 最新6篇 / 近10天热榜6篇
+{% endcomment %}
+{% load static %}
+{% block title %}首页 - BBS博客系统{% endblock %}
+
+{% load my_tag  %}
+
+{% block css %}
+<style>
+    .filter-link { display:block; padding:6px 10px; color:#555; }
+    .filter-link:hover { background:#f5f5f5; text-decoration:none; }
+    .filter-link.active { background:#337ab7; color:#fff; }
+
+    .rank-item { display:flex; align-items:center; padding:8px 10px; border-bottom:1px solid #f0f0f0; }
+    .rank-item img { width:28px; height:28px; margin-right:8px; }
+    .rank-item .rank-meta { font-size:12px; color:#999; }
+    .rank-item .rank-title { display:block; color:#333; }
+    .rank-item:hover .rank-title { color:#337ab7; }
+
+    .panel { margin-bottom:20px; }
+    .list-group-item { padding:16px 15px; }
+    .article-title { font-size:16px; font-weight:bold; margin:0 0 10px; }
+    .article-middle { display:flex; align-items:flex-start; margin-bottom:10px; }
+    .article-middle .mid-avatar { width:91px; height:91px; flex:0 0 91px; margin-right:14px; }
+    .article-summary {
+        {# 控制了最大高度,超出的部分显示省略号 #}
+        max-height:91px; overflow:hidden; margin:0;
+        color:#666; font-size:13px; line-height:1.6;
+        display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical;
+        text-overflow:ellipsis;
+    }
+    .article-meta { font-size:12px; }
+    .article-meta img { width:20px; height:20px; border-radius:50%; vertical-align:middle; margin-right:4px; }
+    .article-meta .badge { margin-left:4px; }
+</style>
+{% endblock %}
+
+{% block main %}
+<div class="container">
+    <div class="row">
+
+        {# ========== 左栏：全站分类 + 我的 ========== #}
+        <div class="col-md-3">
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>全站分类</strong></div>
+                <div class="panel-body" style="padding:0;">
+                    <a class="filter-link {% if filter_type == 'all' %}active{% endif %} " href="/">
+                        最新文章
+                    </a>
+                    {% for c in categories %}
+                    <a class="filter-link {% if filter_type == 'cat' and filter_id == c.id %}active{% endif %} {% if forloop.counter > 10 %}cat-more{% endif %}"
+                       {% if forloop.counter > 10 %}style="display:none;"{% endif %}
+                       href="/?type=cat&id={{ c.id }}">
+                        {{ c.name }} <span class="badge pull-right">{{ c.count }}</span>
+                    </a>
+                    {% empty %}
+                        <div class="text-muted text-center" style="padding:10px;">暂无分类</div>
+                    {% endfor %}
+                    {% comment %}如果超出10个就显示更多{% endcomment %}
+                    {% if categories|length > 10 %}
+                        <a id="catToggle" class="filter-link text-center" style="cursor:pointer;color:#337ab7;">
+                            查看更多 <span class="caret"></span>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>我的</strong></div>
+                <div class="panel-body" style="padding:0;">
+                    <a class="filter-link {% if filter_type == 'my_up' %}active{% endif %}" href="/?type=my_up">
+                        <span class="glyphicon glyphicon-thumbs-up "></span> 我赞过
+                    </a>
+                    <a class="filter-link {% if filter_type == 'my_comment' %}active{% endif %}" href="/?type=my_comment ">
+                        <span class="glyphicon glyphicon-comment"></span> 我评论过
+                    </a>
+                    {% if not request.user.is_authenticated %}
+                        <div class="text-muted" style="padding:8px 10px;font-size:12px;">
+                            （登录后可用「我赞/我评」）
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# ========== 中栏：文章列表 ========== #}
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    {% comment %}根据筛选的类型，显示不同的标题{% endcomment %}
+                    {% if filter_type == 'cat' %}分类：{{ filter_name }}
+                    {% elif filter_type == 'my_up' %}我赞过的文章
+                    {% elif filter_type == 'my_comment' %}我评论过的文章
+                    {% else %}最新文章{% endif %}
+                </div>
+                <ul class="list-group">
+                    {% for a in articles %}
+                        <li class="list-group-item">
+                            {# 顶部：标题 #}
+                            <p class="article-title">
+                                <a href="/index/{{ a.blog.user.username }}/p/{{ a.id }}/">{{ a.title }}</a>
+                            </p>
+                            {# 中部：头像 + 摘要 #}
+                            <div class="article-middle">
+                                <a href="/index/{{ a.blog.user.username }}/">
+                                    <img src="{{ a.blog.user.avatar.url }}"
+                                         width="91" height="91" class="mid-avatar">
+                                </a>
+                                <p class="article-summary">{{ a.content|plain_text|truncatechars:160 }}</p>
+                            </div>
+                            {# 底部：作者（圆头像）+ 日期 左；赞/评 右 #}
+                            <p class="text-muted article-meta clearfix">
+                                <img src="{{ a.blog.user.avatar.url }}">
+                                <a href="/index/{{ a.blog.user.username }}/">作者：{{ a.blog.user.username }}</a>
+                                <span style="margin-left:10px;">{{ a.create_time|date:'Y-m-d H:i' }}</span>
+                                <span class="pull-right">
+                                    <span class="badge">{{ a.up_num }} 赞</span>
+                                    <span class="badge">{{ a.comment_num }} 评</span>
+                                </span>
+                            </p>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-center text-muted">
+                            {% if filter_type == 'my_up' or filter_type == 'my_comment' %}
+                                {% if not now_user.is_authenticated %}请先登录后再查看「我赞/我评」～
+                                {% else %}暂无相关文章{% endif %}
+                            {% else %}
+                                暂无文章，快去发布第一篇吧～
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        {# ========== 右栏：搜索 + 最新 + 热榜 ========== #}
+        <div class="col-md-3">
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>搜索文章</strong></div>
+                <div class="panel-body">
+                    <form action="/" method="get" class="input-group">
+                        <input type="hidden" name="type" value="search">
+                        <input type="text" name="q" class="form-control" placeholder="按标题关键词搜索"
+                               value="">
+                        <span class="input-group-btn">
+                            <button class="btn btn-default" type="submit">
+                                <span class="glyphicon glyphicon-search"></span>
+                            </button>
+                        </span>
+                    </form>
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>最新文章</strong></div>
+                <div class="panel-body" style="padding:0;">
+                    {% for a in latest %}
+                        <a class="rank-item" href="/index/{{ a.blog.user.username }}/p/{{ a.id }}/">
+                            <img src="{{ a.blog.user.avatar.url }}" class="img-circle">
+                            <div>
+                                <span class="rank-meta">{{ a.blog.user.username }}</span>
+                                <span class="rank-title">{{ a.title|truncatechars:16 }}</span>
+                            </div>
+                        </a>
+                    {% empty %}
+                        <div class="text-muted text-center" style="padding:10px;">暂无</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>近 10 天热榜</strong></div>
+                <div class="panel-body" style="padding:0;">
+                    {% for a in hot %}
+                        <a class="rank-item" href="/index/{{ a.blog.user.username }}/p/{{ a.id }}/">
+                            <img src="{{ a.blog.user.avatar.url }}" class="img-circle">
+                            <div>
+                                <span class="rank-meta">{{ a.blog.user.username }}
+                                    <span class="badge" style="margin-left:4px;background: #d9534f">{{ a.up_num }}赞</span>
+                                </span>
+                                <span class="rank-title">{{ a.title|truncatechars:14 }}</span>
+                            </div>
+                        </a>
+                    {% empty %}
+                        <div class="text-muted text-center" style="padding:10px;">近 10 天暂无热门文章</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script>
+// 全站分类「查看更多 / 收起」切换
+$(function () {
+    let $toggle = $('#catToggle');
+    if (!$toggle.length) { return; }
+    let $more = $('.cat-more');
+    let open = false;
+    $toggle.on('click', function () {
+        open = !open;
+        $more.slideToggle();
+        let html = open ? '收起 <span class="dropup"><span class="caret"></span></span>'
+                        : '查看更多 <span class="caret"></span>';
+        $toggle.html(html);
+    });
+});
+</script>
+{% endblock %}

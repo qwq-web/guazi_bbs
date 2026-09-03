@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% comment %}后台母版：继承前端 base.html（所以导航栏一致），主体为左 Tab + 右内容区{% endcomment %}
+
+{% block title %}后台管理 - BBS博客系统{% endblock %}
+{% block nav_title %}后台管理{% endblock %}
+
+{% block main %}
+<div class="container">
+    <div class="row">
+        {# 左侧 Tab #}
+        <div class="col-md-2">
+            <ul class="nav nav-pills nav-stacked">
+                <li class="active"><a href="/backend/">文章管理</a></li>
+                <li><a href="/backend/category/">分类管理</a></li>
+                <li><a href="/backend/tag/">标签管理</a></li>
+                <li><a href="/backend/comment/">评论管理</a></li>
+                <li><a href="/backend/info/">个人信息</a></li>
+            </ul>
+        </div>
+        {# 右侧内容 #}
+        <div class="col-md-10">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script>
+    // 根据当前 URL 高亮匹配的 Tab
+    // 点击切换的时候给对应 Tab 添加 active 类名
+    $(function () {
+        let path = location.pathname;
+        $('.nav-stacked a').each(function () {
+            if (path.indexOf($(this).attr('href')) === 0) {
+                // 给当前点击的 tab 的父元素添加 active 类名,移出其他 tab 的 active 类名
+                $(this).parent().addClass('active').siblings().removeClass('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% comment %}注册页 register.html：AJAX + FormData（含头像上传）+ FileReader 本地预览{% endcomment %}
+
+{% block title %}注册 - BBS博客系统{% endblock %}
+
+{# 注册/登录页不需要修改密码模态框，否则会有重复 id 冲突 #}
+{% block modal %}{% endblock %}
+
+{% block main %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <div class="panel panel-primary" style="margin-top:30px;">
+                <div class="panel-heading"><h3 class="panel-title text-center">用户注册</h3></div>
+                <div class="panel-body">
+                    <form id="registerForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label>用户名</label>
+                            <input type="text" class="form-control" name="username" id="id_username">
+                            <span class="text-danger" id="error_username"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" class="form-control" name="password" id="id_password">
+                            <span class="text-danger" id="error_password"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>确认密码</label>
+                            <input type="password" class="form-control" name="confirm_password" id="id_confirm_password">
+                            <span class="text-danger" id="error_confirm_password"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>邮箱</label>
+                            <input type="email" class="form-control" name="email" id="id_email">
+                            <span class="text-danger" id="error_email"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>站点标题</label>
+                            <input type="text" class="form-control" name="site_title" id="id_site_title">
+                            <span class="text-danger" id="error_site_title"></span>
+                        </div>
+                        <div class="form-group">
+                            <label>头像</label>
+                            <input type="file" name="avatar" id="id_avatar" accept="image/*">
+                            <span class="text-danger" id="error_avatar"></span>
+                            <div style="margin-top:10px;">
+                                <img id="avatarPreview" src="/static/image/default.png"
+                                     width="100" height="100" class="img-thumbnail">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-block" id="registerBtn">注册</button>
+                        <p class="text-center" style="margin-top:10px;">
+                            已有账号？<a href="/login/">去登录</a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{# 继承父模板的 js 代码 #}
+{{ block.super }}
+<script>
+    $(function () {
+        // 1) 头像本地预览
+        $('#id_avatar').change(function () {
+            let file = this.files[0];
+            if (!file) return;
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                $('#avatarPreview').attr('src', e.target.result);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // 2) 注册提交：FormData + AJAX
+        $('#registerBtn').click(function () {
+            // 清空错误提示
+            $('span[id^=error_]').text('');
+            let formData = new FormData($('#registerForm')[0]);
+            $.ajax({
+                url: '/register/',
+                type: 'post',
+                data: formData,
+                processData: false,   // jQuery 不处理数据（FormData 需要）
+                contentType: false,    // 不设置 contentType，浏览器自动加 boundary
+                success: function (res) {
+                    if (res.code === 200) {
+                        alert(res.msg);
+                        location.href = res.url;
+                    } else {
+                        // 处理错误信息
+                        $.each(res.msg, function (k, v) {
+                            $('#error_' + k).text(v);
+                        });
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,167 @@
+{% comment %}基础母版模板 base.html：所有页面继承本模板{% endcomment %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}瓜子BBS博客系统{% endblock %}</title>
+    {# Bootstrap3 CSS #}
+    <link rel="stylesheet" href="{% static 'bootstrap-3.4.1-dist/css/bootstrap.min.css' %}">
+    {# 子模板可追加 CSS #}
+    {% block css %}{% endblock %}
+</head>
+<body>
+
+{# ========= 顶部导航栏 ========= #}
+<nav class="navbar navbar-default navbar-static-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                    data-target="#bbs-navbar">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">{% block nav_title %}瓜子BBS博客系统{% endblock %}</a>
+        </div>
+        <div class="collapse navbar-collapse" id="bbs-navbar">
+            <ul class="nav navbar-nav navbar-right">
+                {# 导航栏：首页/登录/注册/个人主页/后台管理/退出登录 #}
+                {# 检测用户是否登录 #}
+                {% if request.user.is_authenticated %}
+                    {# 已登录：头像 + 用户名下拉 #}
+                    <li class="dropdown" style="display:flex;align-items:center;">
+                        {# 头像：点击跳个人主页 #}
+                        <a href="/index/{{ request.user.username }}/"
+                           style="padding:12px 6px;" title="我的主页">
+                            <img src="{{ request.user.avatar.url }}"
+                                 width="30" height="30" class="img-circle"
+                                 style="border:1px solid #ddd;">
+                        </a>
+                        {# 用户名：下拉菜单 #}
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            {{ request.user.username }} <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a data-toggle="modal" data-target="#changePwdModal" style="cursor:pointer">修改密码</a></li>
+                            <li><a href="/set_avatar/">修改头像</a></li>
+                            <li><a href="/backend/">后台管理</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="/logout/">退出登录</a></li>
+                        </ul>
+                    </li>
+                {% else %}
+                    {# 未登录：登录/注册 #}
+                    <li><a href="/login/">登录</a></li>
+                    <li><a href="/register/">注册</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+{# ========= 主体内容块（默认三栏布局：左 / 中 / 右）========= #}
+{% block main %}
+<div class="container">
+    <div class="row">
+        {# 左边 分类区域#}
+        <div class="col-md-2">{% block left %}{% endblock %}</div>
+        {# 中间 内容区域#}
+        <div class="col-md-8">{% block content %}{% endblock %}</div>
+        {# 右边 侧边栏区域#}
+        <div class="col-md-2">{% block right %}{% endblock %}</div>
+    </div>
+</div>
+{% endblock %}
+
+{# ========= 模态框块 修改密码模块弹出层 ======= #}
+{% block modal %}
+    {% if request.user.is_authenticated %}
+    <div class="modal fade" id="changePwdModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">修改密码</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>旧密码</label>
+                        <input type="password" class="form-control" name="old_pwd" id="old_pwd">
+                        <span class="text-danger" id="error_old_pwd"></span>
+                    </div>
+                    <div class="form-group">
+                        <label>新密码</label>
+                        <input type="password" class="form-control" name="new_pwd" id="new_pwd">
+                        <span class="text-danger" id="error_new_pwd"></span>
+                    </div>
+                    <div class="form-group">
+                        <label>确认新密码</label>
+                        <input type="password" class="form-control" name="confirm_pwd" id="confirm_pwd">
+                        <span class="text-danger" id="error_confirm_pwd"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="submitPwdBtn">提交</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{# ========= 脚本块 ========= #}
+<script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
+<script src="{% static 'bootstrap-3.4.1-dist/js/bootstrap.min.js' %}"></script>
+{% block js %}
+    {# 全局 AJAX：自动给非 GET 请求带 X-CSRFToken 请求头（从 cookie 取）#}
+    <script>
+        function getCookie(name) {
+            var r = document.cookie.match(new RegExp('(^|;\\s*)' + name + '=([^;]+)'));
+            return r ? decodeURIComponent(r[2]) : null;
+        }
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+                }
+            }
+        });
+    </script>
+
+    {# 如果用户已经登录就添加修改密码功能 #}
+    {% if request.user.is_authenticated %}
+    {# 修改密码 AJAX #}
+    <script>
+        $(function () {
+            $('#submitPwdBtn').click(function () {
+                $('#error_old_pwd,#error_new_pwd,#error_confirm_pwd').text('');
+                $.ajax({
+                    url: '/change_pwd/',
+                    type: 'post',
+                    data: {
+                        old_pwd: $('#old_pwd').val(),
+                        new_pwd: $('#new_pwd').val(),
+                        confirm_pwd: $('#confirm_pwd').val()
+                    },
+                    success: function (res) {
+                        if (res.code === 200) {
+                            alert(res.msg);
+                            location.href = res.url;
+                        } else {
+                            $.each(res.msg, function (k, v) {
+                                $('#error_' + k).text(v);
+                            });
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+    {% endif %}
+{% endblock %}
+</body>
+</html>

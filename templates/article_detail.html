@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% comment %}
+文章详情 article_detail.html
+- 标题/作者/时间/正文
+- 点赞点踩：AJAX 无刷新更新数字
+- 评论：根评论 + 子回复展示；AJAX 提交后刷新页面展示新评论
+- 侧边栏：inclusion_tag
+{% endcomment %}
+{% load my_tag  %}
+
+{% block title %}{{ article.title }} - BBS博客系统{% endblock %}
+
+{% block css %}
+<style>
+    {# 文章展示区域美化：标题字号、段落行高、留白 #}
+    .article-content { font-size: 16px; line-height: 1.8; margin: 20px 0; }
+    .article-content p { margin: 12px 0; }
+    .article-content h1, .article-content h2, .article-content h3 { margin: 18px 0 10px; }
+    p img { max-width: 100%; }
+    #rightSidebar{
+        position: sticky;
+        top: 50px;
+        height: 90vh;
+        overflow: auto;
+    }
+    {% comment %}激活后样式{% endcomment %}
+    .active_my{
+        background: skyblue;
+    }
+    .active_my a{
+        color: white !important;
+    }
+    a:focus {
+    outline: none;
+}
+</style>
+{% endblock %}
+
+{% block main %}
+<div class="container">
+    <div class="row">
+        {# 主体：文章 + 点赞点踩 + 评论 #}
+        <div class="col-md-9">
+            <h2>{{ article.title }}</h2>
+            <p class="text-muted" style="font-size:13px;">
+                作者：<a href="/index/{{ article.blog.user.username }}/">{{ article.blog.user.username }}</a>
+                <span style="margin-left:10px;">发布时间：{{ article.create_time|date:'Y-m-d H:i' }}</span>
+            </p>
+            <hr>
+
+            {# —— 文章正文 —— #}
+            <div class="article-content">{{ content_html | md_safe }}</div>
+            <hr>
+
+            {# —— 点赞点踩 —— #}
+            <div>
+                 <button type="button" class="btn btn-default" id="upBtn" data-id="{{ article.id }}">
+                    <span class="glyphicon glyphicon-thumbs-up"></span> 赞
+                    <span id="upNum">{{ article.up_num }}</span>
+                </button>
+               <button type="button" class="btn btn-default" id="downBtn" data-id="{{ article.id }}">
+                    <span class="glyphicon glyphicon-thumbs-down"></span> 踩
+                    <span id="downNum">{{ article.down_num }}</span>
+                </button>
+                <span class="text-muted" style="margin-left:10px;">（不能给自己的文章点赞点踩）</span>
+            </div>
+            <hr>
+
+            {# —— 评论区 —— #}
+            <h4>评论（{{ article.comment_num }}）</h4>
+            <div id="commentList">
+                {% for c in comments %}
+                    {# 根评论 #}
+                    <div class="media" style="border-top:1px solid #eee;padding-top:10px;">
+                        <div class="media-left">
+                            <img src="{{ c.user.avatar.url }}" width="40" height="40" class="img-circle">
+                        </div>
+                        <div class="media-body">
+                            <h5 class="media-heading">
+                                {{ c.user.username }}
+                                <small class="text-muted">{{ c.create_time|date:'Y-m-d H:i' }}</small>
+                            </h5>
+                            {# 评论内容：纯文本，默认转义，安全 #}
+                            <p>{{ c.content|linebreaksbr }}</p>
+                            <button type="button" class="btn btn-link btn-xs replyBtn" data-id="{{ c.id }}" data-reply-user="{{ c.user.username }}">回复</button>
+
+                            {# 子评论（回复）#}
+                            {% for sub in c.subs %}
+                                <div class="media">
+                                    <div class="media-left">
+                                        <img src="{{ sub.user.avatar.url }}" width="32" height="32" class="img-circle">
+                                    </div>
+                                    <div class="media-body">
+                                        <h5 class="media-heading">
+                                            {{ sub.user.username }}
+                                            <small class="text-muted">{{ sub.create_time|date:'Y-m-d H:i' }}</small>
+                                            <button type="button" class="btn btn-link btn-xs replyBtn" data-id="{{ c.id }} " data-reply-user="{{ sub.user.username }}">回复</button>
+                                        </h5>
+                                        <p>{{ sub.content|linebreaksbr }}</p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted">暂无评论，快来抢沙发～</p>
+                {% endfor %}
+            </div>
+
+            {# —— 评论表单 —— #}
+            <form id="commentForm" style="margin-top:20px;">
+                {% csrf_token %}
+                <!-- 隐藏域：文章ID、父评论ID -->
+                <input type="hidden" name="article_id" value="{{ article.id }}">
+                <input type="hidden" name="parent_id" id="parentId" value="">
+                <!-- 回复用户ID -->
+                <input type="hidden" name="reply_user" id="replyUser" value="">
+                <div class="form-group">
+                    <textarea name="content" id="commentContent" class="form-control" rows="3"
+                              placeholder="说点什么..."></textarea>
+                </div>
+                <button type="button" class="btn btn-primary" id="commentBtn">发表评论</button>
+                <button type="button" class="btn btn-default" id="cancelReply" style="display:none;">取消回复</button>
+            </form>
+        </div>
+
+        {# 右侧：①当前文章目录（页内锚点跳转） ②作者最新文章（跳详情）#}
+        <div id="rightSidebar" class="col-md-3">
+            {# —— 当前文章目录：JS 从 .article-content 的 h1/h2/h3 提取并填充到 #articleToc —— #}
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>文章目录</strong></div>
+                <ul id="articleToc" class="list-group" style="font-size:13px;">
+                    <li class="list-group-item text-muted">无目录</li>
+                </ul>
+            </div>
+            {# —— 作者最新文章：点击进入对应文章详情 —— #}
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>作者最新文章</strong></div>
+                <ul class="list-group">
+                    {% for a in latest %}
+                        <li class="list-group-item" style="padding:8px 12px;">
+                            <a href="/index/{{ a.blog.user.username }}/p/{{ a.id }}/">
+                                {{ a.title|truncatechars:18 }}
+                            </a>
+                            <br><span class="text-muted" style="font-size:11px;">{{ a.create_time|date:'Y-m-d' }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">暂无其他文章</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script>
+    // ============ 评论：发表 ============
+    $('#commentBtn').click(function () {
+        $.ajax({
+            url: '/comment/', type: 'post',
+            data: $('#commentForm').serialize(),
+            success: function (res) {
+                if (res.code === 200) {
+                    // 评论展示由服务端渲染，提交成功后刷新页面即可看到新评论
+                    location.reload();
+                } else {
+                    alert(res.msg);
+                }
+            }
+        });
+    });
+
+    // ============ 评论：回复按钮 ============
+    // 点击"回复"：把父评论 id 写入隐藏域，显示"取消回复"
+   $('.replyBtn').click(function () {
+        $('#parentId').val($(this).data('id'));// 父评论ID
+        $('#cancelReply').show(); // 显示"取消回复"按钮
+        $('#commentContent').focus();
+    });
+    $('#cancelReply').click(function () {
+        $('#parentId').val('');
+        $('#cancelReply').hide();
+    });
+
+
+    // ============ 点赞点踩 AJAX ============
+    $('#upBtn').click(function () { doUpDown('true'); });
+    $('#downBtn').click(function () { doUpDown('false'); });
+    function doUpDown(isUp) {
+        $.ajax({
+            url: '/up_down/', type: 'post',
+            data: {article_id: $('#upBtn').data('id'), is_up: isUp},
+            success: function (res) {
+                if (res.code === 200) {
+                    // 无刷新更新点赞/点踩数字
+                    $('#upNum').text(res.up_num);
+                    $('#downNum').text(res.down_num);
+                } else {
+                    alert(res.msg);
+                }
+            }
+        });
+    }
+
+
+    $(function () {
+        var $headings = $('.article-content').find('h1, h2, h3');
+        var $toc = $('#articleToc');
+
+        if (!$headings.length) {
+            return;
+        }
+        $toc.empty();
+
+        // 生成目录li
+        $headings.each(function (i) {
+            var $h = $(this);
+            var id = $h.attr('id') || ('heading-' + i);
+            if (!$h.attr('id')) {
+                $h.attr('id', id);
+            }
+            var level = parseInt($h.prop('tagName').replace('H', ''), 10);
+            var indent = (level - 1) * 12 + 'px';
+
+            var $li = $('<li class="list-group-item" style="padding:6px 10px 6px:' + indent + ';">' +
+                '<a href="#' + id + '" style="color:#555;">' + $h.text() + '</a></li>');
+            $toc.append($li);
+
+            //给第一个li添加active_my类
+            if(i === 0){
+                $li.addClass('active_my');
+            }
+        });
+
+        // ===== 点击li：滚动 + 设置active_my =====
+        $toc.on('click', 'li', function (e) {
+            e.preventDefault();
+            var $thisLi = $(this);
+            // 获取锚点id
+            var anchorId = $thisLi.find('a').attr('href');
+            var $target = $(anchorId);
+            if (!$target.length) return;
+
+            // 1. 高亮：当前li加active_my，其他兄弟移除
+            $thisLi.addClass('active_my').siblings().removeClass('active_my');
+
+            // 2.平滑滚动到标题，留出顶部导航栏60px偏移
+            $('html, body').animate({
+                scrollTop: $target.offset().top - 60
+            }, 200);
+        });
+    });
+
+</script>
+{% endblock %}

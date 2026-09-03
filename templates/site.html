@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% comment %}个人站点 site.html：
+  左：{% register_sidebar blog %}（分类/标签/归档，含缓存）
+  右：当前作者文章列表（无头像，因为已经是作者的个人站点）
+{% endcomment %}
+
+<!-- 个人站点 样式 -->
+{% block title %}{{ blog.site_title }}{% endblock %}
+
+{# 站长自定义 CSS 主题 #}
+{% block css %}
+{% if blog.site_theme %}<link rel="stylesheet" href="{{ blog.site_theme }}">{% endif %}
+<style>
+    .filter-link { display:block; padding:6px 10px; color:#555; }
+    .filter-link:hover { background:#f5f5f5; text-decoration:none; }
+    .list-group-item { padding:14px 15px; }
+    .article-title { font-size:16px; font-weight:bold; margin:0 0 6px; }
+    .article-summary {
+        color:#666; font-size:13px; line-height:1.6; margin:0 0 6px;
+        max-height:72px; overflow:hidden;
+    }
+    .article-meta { font-size:12px; }
+    .panel { margin-bottom:20px; }
+    .list-group-item:hover { background:#f5f5f5; text-decoration:none; }
+    .list-group-item a{text-decoration:none;}
+</style>
+{% endblock %}
+
+{% block main %}
+<div class="container">
+    <div class="row">
+        {# 左：侧边栏（register_sidebar 带缓存）#}
+        <div class="col-md-3">
+            {# ==================== 分类（主页同款风格：前十 + 查看更多）==================== #}
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>分类</strong></div>
+                <div class="panel-body" style="padding:0;">
+                    {% for c in category_list %}
+                        {# 前 10 条默认显示；第 11 条起默认隐藏，点击「查看更多」展开 #}
+                        <a class="filter-link {% if forloop.counter > 10 %}cat-more{% endif %}"
+                           {% if forloop.counter > 10 %}style="display:none;"{% endif %}
+                           href="/index/{{ blog.user.username }}/category/{{ c.id }}/">
+                            {{ c.name }} <span class="badge pull-right">{{ c.article_count }}</span>
+                        </a>
+                    {% empty %}
+                        <div class="text-muted text-center" style="padding:10px;">暂无分类</div>
+                    {% endfor %}
+                    {# 超过 10 条才显示「查看更多 / 收起」切换 #}
+                    {% if category_list|length > 10 %}
+                        <a id="siteCatToggle" class="filter-link text-center"
+                           style="cursor:pointer;color:#337ab7;">
+                            查看更多 <span class="caret"></span>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# ==================== 标签 ==================== #}
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>标签</strong></div>
+                <ul class="list-group">
+                    {% for t in tag_list %}
+                        <li class="list-group-item">
+                            <a  href="/index/{{ blog.user.username }}/tag/{{ t.id }}/">{{ t.name }}</a>
+                            <span class="badge">{{ t.article_count }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">暂无标签</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            {# ==================== 日期归档 ==================== #}
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>归档</strong></div>
+                <ul class="list-group">
+                    {% for d in date_list %}
+                        <li class="list-group-item">
+                            <a href="/index/{{ blog.user.username }}/date/{{ d.date }}/">{{ d.date }}</a>
+                            <span class="badge">{{ d.article_count }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">暂无归档</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        {# 右：文章列表 #}
+        <div class="col-md-9">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <strong>{{ blog.user.username }}</strong> 的文章
+                </div>
+                <ul class="list-group">
+                    {% for a in articles %}
+                        <li class="list-group-item">
+                            {# 标题 -> 详情 #}
+                            <p class="article-title">
+                                <a href="/index/{{ blog.user.username }}/p/{{ a.id }}/">{{ a.title }}</a>
+                            </p>
+                            {# 摘要：plain_text 剥 md 语法成纯文本，再截断 #}
+                            <p class="article-summary">{{ a.content|truncatechars:140 }}</p>
+                            {# 时间 / 赞踩（无作者头像、无作者名，因本页即作者站点）#}
+                            <p class="text-muted article-meta">
+                                {{ a.create_time|date:'Y-m-d H:i' }}
+                                <span class="pull-right">
+                                    <span class="badge">{{ a.up_num }} 赞</span>
+                                    <span class="badge">{{ a.comment_num }} 评</span>
+                                </span>
+                            </p>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-center text-muted">该站点暂无文章</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script>
+// 个人站点侧边栏分类「查看更多 / 收起」：默认只显示前 10 条，点击展开剩余
+$(function () {
+    var $toggle = $('#siteCatToggle');
+    if (!$toggle.length) { return; }      // 无「查看更多」按钮则跳过
+    var $more = $('.cat-more');           // 超出 10 条的分类项
+    var open = false;
+    $toggle.on('click', function () {
+        open = !open;
+        $more.slideToggle();
+        var html = open ? '收起 <span class="dropup"><span class="caret"></span></span>'
+                        : '查看更多 <span class="caret"></span>';
+        $toggle.html(html);
+    });
+});
+</script>
+{% endblock %}

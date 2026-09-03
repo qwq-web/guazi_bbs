@@ -1,0 +1,81 @@
+{% extends 'backend/base.html' %}
+{% comment %}编辑文章 backend/edit_article.html：回显数据，AJAX 提交到 /backend/edit_article/<id>/{% endcomment %}
+
+{% block content %}
+<div class="panel panel-default">
+    <div class="panel-heading"><strong>编辑文章</strong></div>
+    <div class="panel-body">
+        <form id="articleForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>标题</label>
+                <input type="text" name="title" class="form-control" value="{{ article.title }}">
+            </div>
+
+            <div class="form-group">
+                <label>内容（Markdown 文本）</label>
+                {# 回显原始 markdown 文本到 textarea #}
+                <textarea name="content" class="form-control" rows="15">{{ article.content }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>或上传新 .md 文件（覆盖当前内容）</label>
+                <input type="file" name="md_file" accept=".md">
+                <p class="text-muted" style="font-size:12px;">
+                    上传后会重新解析图片并覆盖正文；不上传则保留上方文本框内容。
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label>分类</label>
+                <select name="category" class="form-control">
+                    <option value="">请选择分类</option>
+                    {% for c in categories %}
+                        {# 回显当前分类 #}
+                        <option value="{{ c.id }}"
+                                {# 如果当前分类是文章分类，选中 #}
+                                {% if c.id == article.category_id %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>标签（按住 Ctrl 多选）</label>
+                <select name="tags" class="form-control" multiple size="5">
+                    {% for t in tags %}
+                        {# 回显已选标签 #}
+                        <option value="{{ t.id }}"
+                                {# 如果当前标签是文章标签，选中 #}
+                                {% if t.id in selected_tag_ids %}selected{% endif %}>{{ t.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="saveBtn">保存修改</button>
+            <a href="/backend/" class="btn btn-default">返回</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script>
+    // 保存修改：FormData + AJAX
+    $('#saveBtn').click(function () {
+        let formData = new FormData($('#articleForm')[0]);
+        $.ajax({
+            url: '/backend/edit_article/{{ article.id }}/', type: 'post',
+            data: formData, processData: false, contentType: false,
+            success: function (res) {
+                if (res.code === 200) {
+                    alert(res.msg);
+                    location.href = res.url;
+                } else {
+                    alert(res.msg);
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
