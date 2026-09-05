@@ -23,8 +23,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ============== 1. 安全密钥与调试开关 (默认)==============
 SECRET_KEY = 'django-insecure-uj!mmjf@^jl&i1^$qw1e$34iued0m33uzj7!yj@dj7tp4y3g9e'
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+
+# 关闭开发模式
+DEBUG = False
 ALLOWED_HOSTS = ['*']
+handler404 = 'app01.views._render_404' # 指定404界面
 
 
 # Application definition
