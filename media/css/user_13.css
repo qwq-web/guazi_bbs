@@ -1,0 +1,397 @@
+/* ================================================================
+   Django-BBS 个人站点创意主题 site.css
+   风格：赛博霓虹 · 玻璃拟态 · 深色渐变
+   与默认蓝白主题形成强烈反差
+   使用方式：用户上传后作为 blog.site_theme 生效
+================================================================ */
+
+/* ---------- 全局背景：深色渐变 + 流动光斑 ---------- */
+body {
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) !important;
+    background-attachment: fixed !important;
+    color: #e0e0f0 !important;
+    position: relative;
+    min-height: 100vh;
+}
+/* 背景装饰光斑 */
+body::before,
+body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+    z-index: 0;
+    pointer-events: none;
+}
+body::before {
+    width: 400px; height: 400px;
+    background: #00f0ff;
+    top: -100px; left: -100px;
+    animation: floatOrb 12s ease-in-out infinite alternate;
+}
+body::after {
+    width: 500px; height: 500px;
+    background: #ff00aa;
+    bottom: -150px; right: -150px;
+    animation: floatOrb 15s ease-in-out infinite alternate-reverse;
+}
+@keyframes floatOrb {
+    0%   { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(60px, 80px) scale(1.15); }
+}
+
+/* 让所有内容在光斑之上 */
+.container { position: relative; z-index: 1; }
+
+/* ---------- 全局面板：玻璃拟态 ---------- */
+.panel {
+    background: rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 16px !important;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+    overflow: hidden;
+}
+.panel-heading {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 14px 20px !important;
+}
+.panel-body {
+    background: transparent !important;
+    color: #d0d0e8 !important;
+}
+
+/* ---------- 文字颜色覆盖 ---------- */
+a { color: #00f0ff !important; transition: all 0.2s; }
+a:hover { color: #ff00aa !important; text-shadow: 0 0 8px rgba(255, 0, 170, 0.6); }
+.text-muted { color: rgba(255, 255, 255, 0.45) !important; }
+p, span, div { color: inherit; }
+
+/* ================================================================
+   用户资料卡片
+================================================================ */
+.user-profile-card {
+    background: rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+    margin-bottom: 18px;
+    text-align: center;
+    padding: 28px 16px 22px !important;
+    position: relative;
+    overflow: hidden;
+}
+/* 卡片顶部霓虹光带 */
+.user-profile-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #00f0ff, #ff00aa, #00f0ff);
+    background-size: 200% 100%;
+    animation: neonScroll 3s linear infinite;
+}
+@keyframes neonScroll {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+}
+.user-profile-card .profile-avatar {
+    width: 88px !important;
+    height: 88px !important;
+    border-radius: 50%;
+    /* 用实线边框 + 多层 box-shadow 模拟渐变描边和发光，避免 mask 技术把图片遮掉 */
+    border: 3px solid #00f0ff !important;
+    box-shadow:
+        0 0 0 2px #ff00aa,
+        0 0 20px rgba(0, 240, 255, 0.6),
+        0 0 40px rgba(255, 0, 170, 0.3) !important;
+    object-fit: cover;
+    margin-bottom: 14px;
+    display: inline-block;
+}
+.user-profile-card .profile-name {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    color: #fff !important;
+    margin: 0 0 6px !important;
+    background: linear-gradient(90deg, #00f0ff, #ff00aa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.user-profile-card .profile-meta {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6) !important;
+    margin-bottom: 12px !important;
+}
+.user-profile-card .profile-signature {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8) !important;
+    line-height: 1.6;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding-top: 14px !important;
+    word-break: break-all;
+    font-style: italic;
+}
+
+/* ================================================================
+   分类列表
+================================================================ */
+.site-category-list .filter-link {
+    display: block;
+    padding: 10px 18px;
+    color: rgba(255, 255, 255, 0.75) !important;
+    font-size: 13px;
+    border-left: 3px solid transparent;
+    transition: all 0.25s ease;
+    position: relative;
+}
+.site-category-list .filter-link:hover {
+    background: rgba(0, 240, 255, 0.08) !important;
+    color: #00f0ff !important;
+    text-decoration: none;
+    padding-left: 24px;
+}
+.site-category-list .filter-link.active {
+    background: linear-gradient(90deg, rgba(0, 240, 255, 0.15), transparent) !important;
+    color: #00f0ff !important;
+    font-weight: 600;
+    border-left-color: #00f0ff;
+    box-shadow: inset 3px 0 0 #00f0ff;
+}
+.site-category-list .badge {
+    background: rgba(255, 0, 170, 0.2) !important;
+    color: #ff88cc !important;
+    font-size: 11px;
+    border: 1px solid rgba(255, 0, 170, 0.3);
+}
+
+/* ================================================================
+   标签云：霓虹彩色药丸 + 发光
+================================================================ */
+.site-tag-cloud { padding: 16px; }
+.site-tag-cloud .tag-pill {
+    display: inline-block;
+    padding: 5px 14px;
+    margin: 4px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #fff !important;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+.site-tag-cloud .tag-pill:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 4px 18px rgba(0, 240, 255, 0.5);
+    color: #fff !important;
+}
+/* 5 种霓虹渐变配色 */
+.site-tag-cloud .tag-pill:nth-child(5n+1) {
+    background: linear-gradient(135deg, #00f0ff, #0080ff);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+}
+.site-tag-cloud .tag-pill:nth-child(5n+2) {
+    background: linear-gradient(135deg, #ff00aa, #ff4080);
+    box-shadow: 0 0 12px rgba(255, 0, 170, 0.4);
+}
+.site-tag-cloud .tag-pill:nth-child(5n+3) {
+    background: linear-gradient(135deg, #80ff00, #00ff88);
+    box-shadow: 0 0 12px rgba(128, 255, 0, 0.4);
+}
+.site-tag-cloud .tag-pill:nth-child(5n+4) {
+    background: linear-gradient(135deg, #ffaa00, #ff6600);
+    box-shadow: 0 0 12px rgba(255, 170, 0, 0.4);
+}
+.site-tag-cloud .tag-pill:nth-child(5n+5) {
+    background: linear-gradient(135deg, #aa00ff, #6600ff);
+    box-shadow: 0 0 12px rgba(170, 0, 255, 0.4);
+}
+
+/* ================================================================
+   归档时间线：霓虹光点 + 连线
+================================================================ */
+.site-archive-list {
+    padding: 18px 16px 18px 36px;
+    list-style: none;
+    margin: 0;
+}
+.site-archive-list li {
+    position: relative;
+    padding: 8px 0 8px 18px;
+    font-size: 13px;
+}
+.site-archive-list li::before {
+    content: '';
+    position: absolute;
+    left: -10px; top: 14px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #00f0ff;
+    box-shadow: 0 0 10px #00f0ff, 0 0 20px rgba(0, 240, 255, 0.5);
+}
+.site-archive-list li::after {
+    content: '';
+    position: absolute;
+    left: -6px; top: 22px;
+    bottom: -14px;
+    width: 2px;
+    background: linear-gradient(to bottom, rgba(0, 240, 255, 0.6), rgba(255, 0, 170, 0.2));
+}
+.site-archive-list li:last-child::after { display: none; }
+.site-archive-list a { color: rgba(255, 255, 255, 0.8) !important; }
+.site-archive-list a:hover {
+    color: #ff00aa !important;
+    text-decoration: none;
+}
+.site-archive-list .badge {
+    background: rgba(0, 240, 255, 0.15) !important;
+    color: #00f0ff !important;
+    font-size: 11px;
+    border: 1px solid rgba(0, 240, 255, 0.3);
+}
+
+/* ================================================================
+   文章列表：悬浮发光 + 渐变边框
+================================================================ */
+.site-article-list .list-group-item {
+    background: rgba(255, 255, 255, 0.04) !important;
+    padding: 22px 26px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    margin: 10px 0 !important;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+/* 悬浮：左侧霓虹色条 + 上浮 + 发光 */
+.site-article-list .list-group-item::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 0;
+    background: linear-gradient(to bottom, #00f0ff, #ff00aa);
+    transition: width 0.3s ease;
+}
+.site-article-list .list-group-item:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(0, 240, 255, 0.4) !important;
+    transform: translateX(4px);
+    box-shadow:
+        0 6px 24px rgba(0, 240, 255, 0.15),
+        -4px 0 0 #00f0ff;
+}
+.site-article-list .list-group-item:hover::before {
+    width: 4px;
+}
+.site-article-list .article-title {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    margin: 0 0 10px !important;
+}
+.site-article-list .article-title a {
+    color: #fff !important;
+    transition: all 0.2s;
+}
+.site-article-list .article-title a:hover {
+    color: #00f0ff !important;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+}
+.site-article-list .article-summary {
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 13px;
+    line-height: 1.7;
+    margin: 0 0 10px !important;
+}
+.site-article-list .article-meta {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45) !important;
+}
+.site-article-list .article-meta .badge {
+    background: rgba(0, 240, 255, 0.15) !important;
+    color: #00f0ff !important;
+    font-size: 11px;
+    border: 1px solid rgba(0, 240, 255, 0.3);
+}
+.site-article-list .article-meta .badge:last-child {
+    background: rgba(255, 0, 170, 0.15) !important;
+    color: #ff88cc !important;
+    border: 1px solid rgba(255, 0, 170, 0.3);
+}
+
+/* ================================================================
+   空状态
+================================================================ */
+.site-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255, 255, 255, 0.3) !important;
+}
+.site-empty .glyphicon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    display: block;
+    color: rgba(0, 240, 255, 0.4);
+}
+
+/* ================================================================
+   导航栏适配（深色主题下反转）
+================================================================ */
+.navbar-bbs {
+    background: rgba(15, 12, 41, 0.85) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.2) !important;
+    box-shadow: 0 2px 20px rgba(0, 240, 255, 0.15) !important;
+}
+.navbar-bbs .navbar-brand {
+    color: #00f0ff !important;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+}
+.navbar-bbs .navbar-nav > li > a {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+.navbar-bbs .navbar-nav > li > a:hover {
+    background: rgba(0, 240, 255, 0.1) !important;
+    color: #00f0ff !important;
+}
+.navbar-bbs .navbar-nav > .open > a {
+    background: rgba(0, 240, 255, 0.1) !important;
+    color: #00f0ff !important;
+}
+.dropdown-menu {
+    background: rgba(15, 12, 41, 0.95) !important;
+    border: 1px solid rgba(0, 240, 255, 0.2) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.dropdown-menu > li > a {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+.dropdown-menu > li > a:hover {
+    background: rgba(0, 240, 255, 0.1) !important;
+    color: #00f0ff !important;
+}
+.dropdown-menu .divider {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ================================================================
+   响应式：小屏适配
+================================================================ */
+@media (max-width: 768px) {
+    .user-profile-card { padding: 20px 12px 16px !important; }
+    .user-profile-card .profile-avatar { width: 64px !important; height: 64px !important; }
+    .site-article-list .list-group-item { padding: 16px 18px !important; }
+}

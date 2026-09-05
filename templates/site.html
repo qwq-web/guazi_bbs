@@ -1,41 +1,189 @@
 {% extends 'base.html' %}
+{% load my_tag %}
 
 {% comment %}个人站点 site.html：
-  左：{% register_sidebar blog %}（分类/标签/归档，含缓存）
-  右：当前作者文章列表（无头像，因为已经是作者的个人站点）
+  左：用户资料卡片 + 分类/标签/归档
+  右：当前作者文章列表
+  注意：site.css 不自动引入，仅当用户上传自定义主题（blog.site_theme）时才加载
 {% endcomment %}
 
-<!-- 个人站点 样式 -->
 {% block title %}{{ blog.site_title }}{% endblock %}
 
-{# 站长自定义 CSS 主题 #}
 {% block css %}
+{# 站长自定义 CSS 主题（用户上传后生效，默认不加载）#}
 {% if blog.site_theme %}<link rel="stylesheet" href="{{ blog.site_theme }}">{% endif %}
 <style>
-    .filter-link { display:block; padding:6px 10px; color:#555; }
-    .filter-link:hover { background:#f5f5f5; text-decoration:none; }
-    .list-group-item { padding:14px 15px; }
-    .article-title { font-size:16px; font-weight:bold; margin:0 0 6px; }
-    .article-summary {
-        color:#666; font-size:13px; line-height:1.6; margin:0 0 6px;
-        max-height:72px; overflow:hidden;
+    {# —— 用户资料卡片 —— #}
+    .user-profile-card {
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        margin-bottom: 18px;
+        text-align: center;
+        padding: 24px 16px 18px;
     }
-    .article-meta { font-size:12px; }
-    .panel { margin-bottom:20px; }
-    .list-group-item:hover { background:#f5f5f5; text-decoration:none; }
-    .list-group-item a{text-decoration:none;}
+    .user-profile-card .profile-avatar {
+        width: 72px; height: 72px;
+        border-radius: 50%;
+        border: 3px solid #e8ecf0;
+        object-fit: cover;
+        margin-bottom: 12px;
+    }
+    .user-profile-card .profile-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin: 0 0 4px;
+    }
+    .user-profile-card .profile-meta {
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 10px;
+    }
+    .user-profile-card .profile-signature {
+        font-size: 13px;
+        color: #666;
+        line-height: 1.5;
+        border-top: 1px solid #f0f0f0;
+        padding-top: 12px;
+        word-break: break-all;
+    }
+    {# —— 文章列表项：上下保留间距作为分隔 —— #}
+    .site-article-list .list-group-item {
+        padding: 20px 24px;
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.15s ease;
+        margin: 8px 0;
+        border-radius: 6px;
+    }
+    .site-article-list .list-group-item:hover {
+        background: #f9fafb;
+    }
+    .site-article-list .article-title {
+        font-size: 17px;
+        font-weight: 600;
+        margin: 0 0 8px;
+    }
+    .site-article-list .article-title a { color: #2c3e50; }
+    .site-article-list .article-title a:hover { color: #4a90d9; }
+    .site-article-list .article-summary {
+        color: #888; font-size: 13px; line-height: 1.7; margin: 0 0 8px;
+        max-height: 66px; overflow: hidden;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    }
+    .site-article-list .article-meta { font-size: 12px; color: #aaa; }
+
+    {# —— 分类列表：垂直堆叠 + 左侧色条 —— #}
+    .site-category-list .filter-link {
+        display: block;
+        padding: 9px 16px;
+        color: #666;
+        font-size: 13px;
+        border-left: 3px solid transparent;
+        transition: all 0.15s ease;
+    }
+    .site-category-list .filter-link:hover {
+        background: #f5f7fa;
+        text-decoration: none;
+        color: #4a90d9;
+    }
+    .site-category-list .filter-link.active {
+        background: #eef4fc;
+        color: #4a90d9;
+        font-weight: 600;
+        border-left-color: #4a90d9;
+    }
+    .site-category-list .badge {
+        background: #e8ecf0;
+        color: #888;
+        font-size: 11px;
+    }
+
+    {# —— 标签云：彩色药丸 —— #}
+    .site-tag-cloud { padding: 14px 16px; }
+    .site-tag-cloud .tag-pill {
+        display: inline-block;
+        padding: 4px 12px;
+        margin: 3px;
+        border-radius: 16px;
+        font-size: 12px;
+        color: #fff;
+        text-decoration: none;
+        transition: transform 0.15s, opacity 0.15s;
+    }
+    .site-tag-cloud .tag-pill:hover {
+        transform: translateY(-2px);
+        opacity: 0.9;
+        color: #fff;
+    }
+    .site-tag-cloud .tag-pill:nth-child(5n+1) { background: #667eea; }
+    .site-tag-cloud .tag-pill:nth-child(5n+2) { background: #f093fb; }
+    .site-tag-cloud .tag-pill:nth-child(5n+3) { background: #4facfe; }
+    .site-tag-cloud .tag-pill:nth-child(5n+4) { background: #43e97b; }
+    .site-tag-cloud .tag-pill:nth-child(5n+5) { background: #fa709a; }
+
+    {# —— 归档时间线 —— #}
+    .site-archive-list {
+        padding: 16px 16px 16px 32px;
+        list-style: none;
+        margin: 0;
+    }
+    .site-archive-list li {
+        position: relative;
+        padding: 6px 0 6px 16px;
+        font-size: 13px;
+    }
+    .site-archive-list li::before {
+        content: '';
+        position: absolute;
+        left: -8px; top: 12px;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: #4a90d9;
+    }
+    .site-archive-list li::after {
+        content: '';
+        position: absolute;
+        left: -5px; top: 20px;
+        bottom: -12px;
+        width: 2px;
+        background: #e0e6ed;
+    }
+    .site-archive-list li:last-child::after { display: none; }
+    .site-archive-list a { color: #666; }
+    .site-archive-list a:hover { color: #4a90d9; text-decoration: none; }
+    .site-archive-list .badge {
+        background: #e8ecf0;
+        color: #888;
+        font-size: 11px;
+    }
 </style>
 {% endblock %}
 
 {% block main %}
 <div class="container">
     <div class="row">
-        {# 左：侧边栏（register_sidebar 带缓存）#}
-        <div class="col-md-3">
-            {# ==================== 分类（主页同款风格：前十 + 查看更多）==================== #}
+        {# —— 左：用户资料卡片 + 分类/标签/归档 —— #}
+        <div class="col-md-3" style="position: sticky;top: 71px">
+            {# ========== 用户资料卡片 ========== #}
+            <div class="user-profile-card">
+                <img src="{{ blog.user.avatar.url }}" class="profile-avatar" alt="{{ blog.user.username }}">
+                <p class="profile-name">{{ blog.user.username }}</p>
+                <p class="profile-meta">
+                    {# 性别显示 #}
+                    {{ blog.user.get_gender_display }}
+                    {# 年龄大于 0 才显示 #}
+                    {% if blog.user.age > 0 %} · {{ blog.user.age }}岁{% endif %}
+                </p>
+                <div class="profile-signature">{{ blog.user.signature }}</div>
+            </div>
+
+            {# ==================== 分类 ==================== #}
             <div class="panel panel-default">
-                <div class="panel-heading"><strong>分类</strong></div>
-                <div class="panel-body" style="padding:0;">
+                <div class="panel-heading">分类</div>
+                <div class="panel-body site-category-list" style="padding:0;">
                     {% for c in category_list %}
                         {# 前 10 条默认显示；第 11 条起默认隐藏，点击「查看更多」展开 #}
                         <a class="filter-link {% if forloop.counter > 10 %}cat-more{% endif %}"
@@ -49,51 +197,49 @@
                     {# 超过 10 条才显示「查看更多 / 收起」切换 #}
                     {% if category_list|length > 10 %}
                         <a id="siteCatToggle" class="filter-link text-center"
-                           style="cursor:pointer;color:#337ab7;">
+                           style="cursor:pointer;color:#4a90d9;">
                             查看更多 <span class="caret"></span>
                         </a>
                     {% endif %}
                 </div>
             </div>
 
-            {# ==================== 标签 ==================== #}
+            {# ==================== 标签云（彩色药丸）==================== #}
             <div class="panel panel-default">
-                <div class="panel-heading"><strong>标签</strong></div>
-                <ul class="list-group">
+                <div class="panel-heading">标签</div>
+                <div class="site-tag-cloud">
                     {% for t in tag_list %}
-                        <li class="list-group-item">
-                            <a  href="/index/{{ blog.user.username }}/tag/{{ t.id }}/">{{ t.name }}</a>
-                            <span class="badge">{{ t.article_count }}</span>
-                        </li>
+                        <a href="/index/{{ blog.user.username }}/tag/{{ t.id }}/"
+                           class="tag-pill">{{ t.name }} <span style="opacity:0.7;">({{ t.article_count }})</span></a>
                     {% empty %}
-                        <li class="list-group-item text-muted">暂无标签</li>
+                        <div class="text-muted text-center" style="padding:10px;">暂无标签</div>
                     {% endfor %}
-                </ul>
+                </div>
             </div>
 
-            {# ==================== 日期归档 ==================== #}
+            {# ==================== 日期归档（时间线样式）==================== #}
             <div class="panel panel-default">
-                <div class="panel-heading"><strong>归档</strong></div>
-                <ul class="list-group">
+                <div class="panel-heading">归档</div>
+                <ul class="site-archive-list">
                     {% for d in date_list %}
-                        <li class="list-group-item">
+                        <li>
                             <a href="/index/{{ blog.user.username }}/date/{{ d.date }}/">{{ d.date }}</a>
                             <span class="badge">{{ d.article_count }}</span>
                         </li>
                     {% empty %}
-                        <li class="list-group-item text-muted">暂无归档</li>
+                        <li class="text-muted" style="padding:10px 0;">暂无归档</li>
                     {% endfor %}
                 </ul>
             </div>
         </div>
 
-        {# 右：文章列表 #}
+        {# —— 右：文章列表（悬浮卡片动效）—— #}
         <div class="col-md-9">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <strong>{{ blog.user.username }}</strong> 的文章
                 </div>
-                <ul class="list-group">
+                <ul class="list-group site-article-list">
                     {% for a in articles %}
                         <li class="list-group-item">
                             {# 标题 -> 详情 #}
@@ -101,8 +247,8 @@
                                 <a href="/index/{{ blog.user.username }}/p/{{ a.id }}/">{{ a.title }}</a>
                             </p>
                             {# 摘要：plain_text 剥 md 语法成纯文本，再截断 #}
-                            <p class="article-summary">{{ a.content|truncatechars:140 }}</p>
-                            {# 时间 / 赞踩（无作者头像、无作者名，因本页即作者站点）#}
+                            <p class="article-summary">{{ a.content|plain_text|truncatechars:140 }}</p>
+                            {# 时间 / 赞踩 #}
                             <p class="text-muted article-meta">
                                 {{ a.create_time|date:'Y-m-d H:i' }}
                                 <span class="pull-right">
@@ -112,7 +258,10 @@
                             </p>
                         </li>
                     {% empty %}
-                        <li class="list-group-item text-center text-muted">该站点暂无文章</li>
+                        <li class="site-empty">
+                            <span class="glyphicon glyphicon-pencil"></span>
+                            <p>该站点暂无文章</p>
+                        </li>
                     {% endfor %}
                 </ul>
             </div>

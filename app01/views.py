@@ -20,6 +20,7 @@ AJAX 接口统一返回：
 """
 from django.shortcuts import render
 from django.views import View
+from django.core.paginator import Paginator  # 首页文章分页
 
 # 注册相关模块
 from django.http import JsonResponse
@@ -333,7 +334,7 @@ class IndexView(View):
         # 右侧：最新 6 篇 + 近 10 天点赞最多 6 篇
         latest = list(
             Article.objects.filter(is_delete=False)
-            .select_related('blog__user').order_by('-create_time')[:6]
+            .select_related('blog__user').order_by('-create_time')[:4]
         )
         # 近10天热榜6篇
         # 计算近10天前的时间点 timezone.now() Django 带时区的当前时间（推荐用这个，不要用 `datetime.now()`，否则时区会乱），获取服务器当前时刻，带时区信息。
@@ -341,8 +342,17 @@ class IndexView(View):
         ten_days_ago = timezone.now() - timedelta(days=10)
         hot = list(
             Article.objects.filter(is_delete=False, create_time__gte=ten_days_ago)
-            .select_related('blog__user').order_by('-up_num')[:6]
+            .select_related('blog__user').order_by('-up_num')[:5]
         )
+
+        # —— 首页文章分页：每页 10 篇 ——
+        # 从查询参数获取当前页码，默认第 1 页
+        page_num = request.GET.get('page', '1')
+        paginator = Paginator(articles, 10)  # 每页 10 篇文章
+        # page_obj 当前页对象，包含该页的文章列表和分页信息
+        page_obj = paginator.get_page(page_num)
+        # page_range 用于模板渲染分页导航条
+        page_range = paginator.page_range
 
         return render(request, 'index.html',locals())
 
@@ -451,13 +461,14 @@ class ArticleDetailView(View):
         )
 
         # 评论树：根评论 + 每个根评论下的子回复
+        # select_related('user') 关联查询评论用户；select_related('reply_to') 关联查询@回复目标用户
         comments = list(Comment.objects.filter(
             article=article, parent__isnull=True, is_delete=False
-        ).select_related('user'))
+        ).select_related('user', 'reply_to'))
         for root in comments:
             root.subs = list(Comment.objects.filter(
                 parent=root, is_delete=False
-            ).select_related('user'))
+            ).select_related('user', 'reply_to'))
 
         return render(request, 'article_detail.html',locals())
 
@@ -476,8 +487,8 @@ class CommentView(View):
         article_id = request.POST.get('article_id')
         content = (request.POST.get('content') or '').strip()
         parent_id = request.POST.get('parent_id') or ''
+        # 回复目标用户名：前端点击"回复"时传入被回复用户的 username
         reply_user = request.POST.get("reply_user", "")
-
 
         article = Article.objects.filter(id=article_id, is_delete=False).first() # 获取文章详情
         if not article:
@@ -493,10 +504,24 @@ class CommentView(View):
             ).first()
             if not parent:
                 return JsonResponse({'code': 400, 'msg': '父评论不存在'})
-        # 创建评论
+
+        # 回复目标用户校验：通过 username 查找被回复的用户对象
+        # 如果是根评论（无 parent），reply_to 为 None；子回复时根据 reply_user 查找
+        reply_to_user = None
+        if reply_user:
+            reply_to_user = User.objects.filter(username=reply_user).first()
+
+        # @功能：自己回复自己时不添加 @前缀；回复别人时在内容前自动加上 "@用户名 "
+        # reply_to_user 存在且不是当前登录用户时才加 @前缀
+        if reply_to_user and reply_to_user.id != request.user.id:
+            # 在评论内容前拼接 "@用户名 "，前端渲染时用特殊颜色标记
+            content = '@{} {}'.format(reply_to_user.username, content)
+
+        # 创建评论，保存 reply_to 关系（@功能核心）
         Comment.objects.create(
             user=request.user, article=article,
             content=content, parent=parent,
+            reply_to=reply_to_user if (reply_to_user and reply_to_user.id != request.user.id) else None,
         )
 
         # 评论计数 +1（用 F 表达式避免并发覆盖）
@@ -608,6 +633,8 @@ class AddArticleView(View):
         category_id = request.POST.get('category') or ''
         tag_ids = request.POST.getlist('tags')
         md_file = request.FILES.get('md_file')
+        # 封面图片文件：可选上传，不上传时为 None，前端回退用作者头像
+        cover_file = request.FILES.get('cover')
 
         #读取文件内容
         if md_file:
@@ -620,9 +647,11 @@ class AddArticleView(View):
             return JsonResponse({'code': 400, 'msg': '内容不能为空'})
 
         # 创建文章（content 存原始 markdown 文本）
+        # 封面：如果用户上传了封面图片就传入，否则用模型默认值（空字符串）
         article = Article.objects.create(
             blog=blog, title=title, content=content,
             category_id=category_id or None,
+            cover=cover_file if cover_file else '',
         )
 
         # 多对多标签
@@ -665,6 +694,8 @@ class EditArticleView(View):
         category_id = request.POST.get('category') or ''
         tag_ids = request.POST.getlist('tags')
         md_file = request.FILES.get('md_file')
+        # 封面图片文件：可选上传；上传则替换旧封面，不上传则保留原封面
+        cover_file = request.FILES.get('cover')
 
         # 读取文件内容
         if md_file:
@@ -678,6 +709,11 @@ class EditArticleView(View):
         article.title = title
         article.content = content
         article.category_id = category_id or None
+        # 封面：仅当用户上传了新封面时才覆盖，不上传则保留旧值
+        if cover_file:
+            article.cover = cover_file
+        # 编辑保存时自动恢复删除状态：如果文章之前被逻辑删除，编辑后恢复为正常
+        article.is_delete = False
         article.save()
         # 标签：先清后设
         article.tags.set(tag_ids)
@@ -688,7 +724,9 @@ class EditArticleView(View):
 # ==================== 16. 删除文章 DelArticleView ====================
 class DelArticleView(View):
     """
-    删除文章（逻辑删除 is_delete=True，不物理删除）。
+    删除文章（两阶段删除）：
+      - 第一次删除：逻辑删除 is_delete=True，后台仍可见，可编辑恢复
+      - 第二次删除（文章已是已删除状态）：永久物理删除，不可恢复
       - 仅作者本人可删（blog=本人站点）
       - 删除后清除首页 + 侧边栏缓存
     """
@@ -700,11 +738,18 @@ class DelArticleView(View):
         article = Article.objects.filter(id=article_id, blog=blog).first()
         if not article:
             return JsonResponse({'code': 400, 'msg': '文章不存在或无权操作'})
-        # 逻辑删除
-        article.is_delete = True
-        article.save()
-        _clear_article_caches(blog.id)
-        return JsonResponse({'code': 200, 'msg': '删除成功'})
+
+        if article.is_delete:
+            # 文章已经是逻辑删除状态 -> 永久物理删除（从数据库中彻底移除）
+            article.delete()
+            _clear_article_caches(blog.id)
+            return JsonResponse({'code': 200, 'msg': '文章已永久删除'})
+        else:
+            # 文章正常状态 -> 第一次删除：逻辑删除
+            article.is_delete = True
+            article.save()
+            _clear_article_caches(blog.id)
+            return JsonResponse({'code': 200, 'msg': '删除成功（可编辑恢复或再次删除永久移除）'})
 
 
 
@@ -879,6 +924,8 @@ class InfoView(View):
         age = request.POST.get('age') or '0'
         gender = request.POST.get('gender') or '3'
         phone = (request.POST.get('phone') or '').strip()
+        # 个性签名：允许为空，为空时保存默认值
+        signature = (request.POST.get('signature') or '').strip() or '用户未设置签名'
         css_file = request.FILES.get('site_theme')
 
         # 用户名校验：非空 + 不重复（排除自己）
@@ -898,6 +945,7 @@ class InfoView(View):
         except ValueError:
             user.gender = 3
         user.phone = phone
+        user.signature = signature
         user.save()
 
         # 站点自定义 CSS 主题上传

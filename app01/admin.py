@@ -40,7 +40,7 @@ class CategoryAdmin(admin.ModelAdmin):
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
     """文章模型后台管理配置"""
-    list_display = ['id', 'title', 'blog', 'category', 'up_num', 'down_num', 'comment_num', 'is_delete']
+    list_display = ['id', 'title', 'blog', 'category', 'cover', 'up_num', 'down_num', 'comment_num', 'is_delete']
     list_filter = ['blog', 'category', 'is_delete']
     search_fields = ['title', 'content']
 
@@ -55,6 +55,6 @@ class UpAndDownAdmin(admin.ModelAdmin):
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     """评论模型后台管理配置"""
-    list_display = ['id', 'user', 'article', 'parent', 'create_time', 'is_delete']
+    list_display = ['id', 'user', 'article', 'parent', 'reply_to', 'create_time', 'is_delete']
     list_filter = ['is_delete']
     search_fields = ['content']

@@ -1,123 +1,189 @@
-/* Django-BBS 扁平简洁全局样式（配合 Bootstrap3） */
+/* ================================================================
+   Django-BBS 全局样式 a.css
+   配合 Bootstrap 3.4.1 使用，覆盖默认配色、间距、卡片、按钮等
+   设计理念：简洁高级、色彩和谐、减少留白、PC端充分利用宽度
+================================================================ */
+
+/* ---------- 全局基础 ---------- */
 body {
-    background: #f5f6f8;
-    font-family: "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background: #f0f2f5;
+    font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Helvetica, Arial, sans-serif;
     color: #333;
+    font-size: 14px;
+    /* 顶部导航栏固定后，主体内容整体下移，避免被遮挡 */
+    padding-top: 70px;
 }
+
+a { color: #4a90d9; transition: color 0.2s; }
+a:hover { color: #2a70b9; text-decoration: none; }
+
+/* ---------- 导航栏：固定在顶部 ---------- */
 .navbar-bbs {
-    background: #2f3b4c;
+    background: #fff;
     border: none;
     border-radius: 0;
-    margin-bottom: 20px;
+    margin-bottom: 0;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+    min-height: 56px;
+    /* 固定在窗口顶部，滚动时不随页面移动 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
 }
-.navbar-bbs .navbar-brand,
+.navbar-bbs .container {
+    /* 导航栏内部容器复用 .container 的响应式宽度，无需单独设值，
+       这样窄屏下导航栏与主体内容区宽度保持一致对齐 */
+    max-width: 100%;
+}
+.navbar-bbs .navbar-brand {
+    color: #2c3e50;
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 26px;
+    padding: 15px 20px;
+}
 .navbar-bbs .navbar-nav > li > a {
-    color: #fff;
+    color: #555;
+    padding: 18px 16px;
+    transition: background 0.2s;
 }
-.navbar-bbs .navbar-nav > li > a:hover {
-    background: #3d4d64;
-    color: #fff;
+.navbar-bbs .navbar-nav > li > a:hover,
+.navbar-bbs .navbar-nav > .open > a {
+    background: #f7f8fa;
+    color: #2c3e50;
 }
+.navbar-bbs .navbar-toggle { margin-top: 11px; }
+
+/* ---------- 容器宽度：固定 1300px，-------- */
+.container {
+    width: 1400px;
+    max-width: 100%;
+}
+
+/* ---------- 卡片 Panel ---------- */
 .panel {
-    border-radius: 2px;
-    box-shadow: none;
-    border-color: #e5e5e5;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: none;
+    margin-bottom: 18px;
+    overflow: hidden;
 }
 .panel-heading {
     background: #fff !important;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 14px 20px;
     font-weight: 600;
+    font-size: 15px;
+    color: #2c3e50;
 }
-.err {
-    color: #d9534f;
-    font-size: 12px;
+.panel-body { padding: 18px 20px; }
+
+/* ---------- 列表项 ---------- */
+.list-group { margin-bottom: 0; }
+.list-group-item {
+    border: none;
+    border-bottom: 1px solid #f5f5f5;
+    padding: 16px 20px;
+    transition: background 0.15s;
 }
-.ok {
-    color: #5cb85c;
-    font-size: 12px;
+.list-group-item:last-child { border-bottom: none; }
+.list-group-item:hover { background: #f9fafb; }
+
+/* ---------- 按钮 ---------- */
+.btn-primary {
+    background: #4a90d9;
+    border-color: #4a90d9;
+    border-radius: 6px;
+    transition: all 0.2s;
 }
-.article-item {
-    padding: 16px 0;
-    border-bottom: 1px solid #eee;
+.btn-primary:hover {
+    background: #3a7bc8;
+    border-color: #3a7bc8;
 }
-.article-item h3 {
-    margin-top: 0;
-    font-size: 20px;
+.btn-default {
+    border-radius: 6px;
 }
-.article-item h3 a {
-    color: #2f3b4c;
+.btn-danger {
+    border-radius: 6px;
 }
-.article-meta {
-    color: #999;
-    font-size: 12px;
+.btn-warning {
+    border-radius: 6px;
 }
-.article-meta img {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    margin-right: 6px;
+
+/* ---------- 表单 ---------- */
+.form-control {
+    border-radius: 6px;
+    border-color: #e0e0e0;
+    box-shadow: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
-.article-body {
-    background: #fff;
-    padding: 28px 32px;
-    line-height: 1.8;
-    font-size: 16px;
+.form-control:focus {
+    border-color: #4a90d9;
+    box-shadow: 0 0 0 3px rgba(74,144,217,0.12);
 }
-.article-body h1,
-.article-title {
-    font-size: 28px;
-    margin-bottom: 16px;
+
+/* ---------- 徽章 ---------- */
+.badge {
+    background: #e8ecf0;
+    color: #888;
+    font-weight: normal;
+    font-size: 11px;
+    padding: 3px 7px;
+    border-radius: 10px;
 }
-.article-body p {
-    margin-bottom: 14px;
-}
-.article-body pre,
-.article-body code {
-    background: #f7f7f9;
-    border-radius: 2px;
-}
-.article-body blockquote {
-    border-left: 4px solid #ccc;
-    padding-left: 12px;
-    color: #666;
-}
-.article-body table {
-    width: 100%;
-}
-.avatar-preview {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid #ddd;
-}
-.comment-item {
-    padding: 12px 0;
-    border-bottom: 1px dashed #eee;
-}
-.comment-item img {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-}
-.comment-child {
-    margin-left: 48px;
-    background: #fafafa;
-    padding: 8px 12px;
-}
-.footer-bbs {
+
+/* ---------- 模态框 ---------- */
+.modal-content { border-radius: 10px; border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.16); }
+.modal-header { border-bottom: 1px solid #f0f0f0; }
+.modal-footer { border-top: 1px solid #f0f0f0; }
+
+/* ---------- 分页 ---------- */
+.pagination > li > a,
+.pagination > li > span {
+    color: #4a90d9;
+    border: 1px solid #e8e8e8;
+    border-radius: 4px !important;
+    margin: 0 3px;
+    min-width: 34px;
     text-align: center;
-    color: #999;
-    padding: 24px 0;
-    font-size: 12px;
 }
-.tab-pane {
-    padding-top: 16px;
+.pagination > li > a:hover {
+    background: #f0f5ff;
+    color: #2a70b9;
+    border-color: #d0d8e0;
 }
+.pagination > .active > a,
+.pagination > .active > span {
+    background: #4a90d9;
+    border-color: #4a90d9;
+    color: #fff;
+}
+.pagination > .disabled > a,
+.pagination > .disabled > span {
+    color: #ccc;
+    background: #fafafa;
+}
+
+/* ---------- 表格：单元格左右内边距，避免内容贴边 ---------- */
+.table > thead > tr > th,
+.table > tbody > tr > td {
+    padding: 12px 16px;
+    vertical-align: middle;
+}
+.table > thead > tr > th {
+    font-weight: 600;
+    color: #555;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+/* ---------- 通用工具 ---------- */
+.text-muted { color: #aaa !important; }
+
+/* ---------- 响应式：小屏适配 ---------- */
 @media (max-width: 768px) {
-    .article-body {
-        padding: 16px;
-    }
-    .comment-child {
-        margin-left: 12px;
-    }
+    .panel { margin-bottom: 12px; }
+    .panel-heading { padding: 12px 15px; }
+    .list-group-item { padding: 12px 15px; }
 }

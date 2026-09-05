@@ -11,67 +11,119 @@
 {% block title %}{{ article.title }} - BBS博客系统{% endblock %}
 
 {% block css %}
-<style>
-    {# 文章展示区域美化：标题字号、段落行高、留白 #}
-    .article-content { font-size: 16px; line-height: 1.8; margin: 20px 0; }
-    .article-content p { margin: 12px 0; }
-    .article-content h1, .article-content h2, .article-content h3 { margin: 18px 0 10px; }
-    p img { max-width: 100%; }
-    #rightSidebar{
-        position: sticky;
-        top: 50px;
-        height: 90vh;
-        overflow: auto;
-    }
-    {% comment %}激活后样式{% endcomment %}
-    .active_my{
-        background: skyblue;
-    }
-    .active_my a{
-        color: white !important;
-    }
-    a:focus {
-    outline: none;
-}
-</style>
-{% endblock %}
+    <style>
+        {# —— 文章正文排版 —— #}
+        .article-content {
+            font-size: 16px; line-height: 1.85; margin: 24px 0;
+            color: #444;
+        }
+        .article-content p { margin: 14px 0; }
+        .article-content h1 { font-size: 26px; margin: 28px 0 14px; color: #2c3e50; }
+        .article-content h2 { font-size: 22px; margin: 24px 0 12px; color: #2c3e50; }
+        .article-content h3 { font-size: 18px; margin: 20px 0 10px; color: #2c3e50; }
+        .article-content pre {
+            background: #f7f8fa; border-radius: 6px; padding: 14px 16px;
+            border: 1px solid #ececef; overflow-x: auto;
+        }
+        .article-content code {
+            background: #f0f2f5; padding: 2px 5px; border-radius: 3px;
+            font-size: 14px; color: #c7254e;
+        }
+        .article-content pre code { background: none; color: inherit; }
+        .article-content blockquote {
+            border-left: 4px solid #4a90d9; background: #f7faff;
+            padding: 12px 16px; margin: 16px 0; color: #666; border-radius: 0 6px 6px 0;
+        }
+        .article-content img { max-width: 100%; border-radius: 6px; }
+        p img { max-width: 100%; }
+
+        {# —— 点赞点踩按钮 —— #}
+        #upBtn, #downBtn { border-radius: 20px; padding: 6px 20px; transition: all 0.2s; }
+        #upBtn:hover { background: #4a90d9; color: #fff; border-color: #4a90d9; }
+        #downBtn:hover { background: #e74c3c; color: #fff; border-color: #e74c3c; }
+
+        {# —— 右侧边栏 —— #}
+        #rightSidebar {
+            position: sticky; top: 66px; height: 88vh; overflow: auto;
+        }
+
+        {# —— 目录激活样式 —— #}
+        .active_my { background: #eef4fc; border-left: 3px solid #4a90d9; }
+        .active_my a { color: #4a90d9 !important; font-weight: 600; }
+        a:focus { outline: none; }
+
+        {# —— 目录项不换行 —— #}
+        #articleToc .list-group-item {
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            border-left: 3px solid transparent; transition: all 0.15s;
+        }
+        #articleToc .list-group-item a {
+            display: block; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        {# —— @功能高亮 —— #}
+        .at-mention {
+            color: #4a90d9; font-weight: 600;
+            background: #eef4fc; padding: 1px 5px; border-radius: 3px;
+        }
+
+        {# —— 评论区 —— #}
+        .media { padding: 12px 0; border-top: 1px solid #f5f5f5; }
+        .media:first-of-type { border-top: none; }
+        .media-heading { font-size: 14px; font-weight: 600; color: #2c3e50; }
+        .media-heading small { font-weight: normal; }
+
+        {# —— 响应式：小屏隐藏右侧栏 —— #}
+        @media (max-width: 991px) {
+            #rightSidebar { display: none !important; }
+        }
+    </style>
+    {% endblock %}
 
 {% block main %}
 <div class="container">
     <div class="row">
         {# 主体：文章 + 点赞点踩 + 评论 #}
         <div class="col-md-9">
-            <h2>{{ article.title }}</h2>
-            <p class="text-muted" style="font-size:13px;">
-                作者：<a href="/index/{{ article.blog.user.username }}/">{{ article.blog.user.username }}</a>
-                <span style="margin-left:10px;">发布时间：{{ article.create_time|date:'Y-m-d H:i' }}</span>
-            </p>
-            <hr>
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    {# —— 文章标题 —— #}
+                    <h2 style="margin-top:0;font-size:28px;font-weight:700;color:#2c3e50;">{{ article.title }}</h2>
+                    {# —— 作者信息条 —— #}
+                    <div style="display:flex;align-items:center;padding:10px 0 16px;border-bottom:1px solid #f0f0f0;margin-bottom:8px;">
+                        <img src="{{ article.blog.user.avatar.url }}" width="36" height="36" class="img-circle" style="margin-right:10px;">
+                        <div>
+                            <a href="/index/{{ article.blog.user.username }}/" style="font-weight:600;color:#2c3e50;">{{ article.blog.user.username }}</a>
+                            <span class="text-muted" style="margin-left:10px;font-size:12px;">{{ article.create_time|date:'Y-m-d H:i' }}</span>
+                        </div>
+                    </div>
 
             {# —— 文章正文 —— #}
             <div class="article-content">{{ content_html | md_safe }}</div>
-            <hr>
 
             {# —— 点赞点踩 —— #}
-            <div>
+            <div style="text-align:center;padding:20px 0;border-top:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0;margin:20px 0;">
                  <button type="button" class="btn btn-default" id="upBtn" data-id="{{ article.id }}">
                     <span class="glyphicon glyphicon-thumbs-up"></span> 赞
                     <span id="upNum">{{ article.up_num }}</span>
                 </button>
-               <button type="button" class="btn btn-default" id="downBtn" data-id="{{ article.id }}">
+               <button type="button" class="btn btn-default" id="downBtn" data-id="{{ article.id }}" style="margin-left:10px;">
                     <span class="glyphicon glyphicon-thumbs-down"></span> 踩
                     <span id="downNum">{{ article.down_num }}</span>
                 </button>
-                <span class="text-muted" style="margin-left:10px;">（不能给自己的文章点赞点踩）</span>
+                <p class="text-muted" style="font-size:12px;margin-top:8px;">不能给自己的文章点赞点踩</p>
             </div>
-            <hr>
+                </div>{# /.panel-body #}
+            </div>{# /.panel #}
 
             {# —— 评论区 —— #}
-            <h4>评论（{{ article.comment_num }}）</h4>
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>评论（{{ article.comment_num }}）</strong></div>
+                <div class="panel-body">
             <div id="commentList">
                 {% for c in comments %}
                     {# 根评论 #}
-                    <div class="media" style="border-top:1px solid #eee;padding-top:10px;">
+                    <div class="media">
                         <div class="media-left">
                             <img src="{{ c.user.avatar.url }}" width="40" height="40" class="img-circle">
                         </div>
@@ -94,9 +146,11 @@
                                         <h5 class="media-heading">
                                             {{ sub.user.username }}
                                             <small class="text-muted">{{ sub.create_time|date:'Y-m-d H:i' }}</small>
-                                            <button type="button" class="btn btn-link btn-xs replyBtn" data-id="{{ c.id }} " data-reply-user="{{ sub.user.username }}">回复</button>
+                                            {# 回复按钮：data-id=根评论ID, data-reply-user=当前子评论用户名（用于@功能） #}
+                                            <button type="button" class="btn btn-link btn-xs replyBtn" data-id="{{ c.id }}" data-reply-user="{{ sub.user.username }}">回复</button>
                                         </h5>
-                                        <p>{{ sub.content|linebreaksbr }}</p>
+                                        {# @功能：评论内容开头的 @用户名 用 at_mark 过滤器高亮显示，其余正文正常渲染 #}
+                                        <p>{{ sub.content|at_mark|linebreaksbr }}</p>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -110,18 +164,21 @@
             {# —— 评论表单 —— #}
             <form id="commentForm" style="margin-top:20px;">
                 {% csrf_token %}
-                <!-- 隐藏域：文章ID、父评论ID -->
+                <!-- 隐藏域：文章ID、父评论ID、回复目标用户（@功能） -->
                 <input type="hidden" name="article_id" value="{{ article.id }}">
                 <input type="hidden" name="parent_id" id="parentId" value="">
-                <!-- 回复用户ID -->
                 <input type="hidden" name="reply_user" id="replyUser" value="">
                 <div class="form-group">
                     <textarea name="content" id="commentContent" class="form-control" rows="3"
                               placeholder="说点什么..."></textarea>
+                    {# @提示：回复子评论时显示"正在回复 @用户名" #}
+                    <p id="replyHint" class="text-muted" style="font-size:12px;margin-top:5px;display:none;"></p>
                 </div>
                 <button type="button" class="btn btn-primary" id="commentBtn">发表评论</button>
                 <button type="button" class="btn btn-default" id="cancelReply" style="display:none;">取消回复</button>
             </form>
+                </div>{# /.panel-body #}
+            </div>{# /.panel #}
         </div>
 
         {# 右侧：①当前文章目录（页内锚点跳转） ②作者最新文章（跳详情）#}
@@ -174,14 +231,24 @@
     });
 
     // ============ 评论：回复按钮 ============
-    // 点击"回复"：把父评论 id 写入隐藏域，显示"取消回复"
+    // 点击"回复"：把父评论 id 和被回复用户名写入隐藏域，显示"取消回复"
    $('.replyBtn').click(function () {
-        $('#parentId').val($(this).data('id'));// 父评论ID
-        $('#cancelReply').show(); // 显示"取消回复"按钮
+        var replyUser = $(this).data('reply-user');      // 被回复用户名
+        $('#parentId').val($(this).data('id'));           // 父评论（根评论）ID
+        $('#replyUser').val(replyUser);                    // @功能：被回复用户名
+        $('#cancelReply').show();                          // 显示"取消回复"按钮
+        // @提示：显示"正在回复 @用户名"
+        if (replyUser) {
+            $('#replyHint').text('正在回复 @' + replyUser).show();
+        } else {
+            $('#replyHint').hide();
+        }
         $('#commentContent').focus();
     });
     $('#cancelReply').click(function () {
         $('#parentId').val('');
+        $('#replyUser').val('');  // 清空回复目标用户
+        $('#replyHint').hide();   // 隐藏@提示
         $('#cancelReply').hide();
     });
 
@@ -227,6 +294,8 @@
 
             var $li = $('<li class="list-group-item" style="padding:6px 10px 6px:' + indent + ';">' +
                 '<a href="#' + id + '" style="color:#555;">' + $h.text() + '</a></li>');
+            // 记录该目录项对应的标题 id，scroll spy 时通过 data 匹配
+            $li.data('heading-id', id);
             $toc.append($li);
 
             //给第一个li添加active_my类
@@ -235,7 +304,51 @@
             }
         });
 
-        // ===== 点击li：滚动 + 设置active_my =====
+        // ===== 关键标记：是否正在由"点击目录"触发的平滑滚动中 =====
+        // 为 true 时，scroll spy 暂停激活切换，保证点击跳转过程中只高亮最终点击项
+        var isClickScrolling = false;
+        var scrollTimer = null;  // 滚动节流定时器
+
+        /**
+         * scroll spy：根据滚动位置自动激活对应目录项
+         * 仅在 isClickScrolling === false 时执行
+         */
+        function updateActiveToc() {
+            if (isClickScrolling) return;
+
+            // 偏移量：顶部导航栏约 60px + 一点余量
+            var scrollTop = $(window).scrollTop() + 80;
+            var currentId = null;
+
+            // 找到"顶部 ≤ 当前滚动位置"中最靠下的那个标题
+            $headings.each(function () {
+                var $h = $(this);
+                if ($h.offset().top <= scrollTop) {
+                    currentId = $h.attr('id');
+                } else {
+                    return false;  // 后续标题位置更靠下，提前退出
+                }
+            });
+
+            if (currentId) {
+                // 清除全部高亮，只激活当前匹配项
+                $toc.find('li').removeClass('active_my');
+                $toc.find('li').each(function () {
+                    if ($(this).data('heading-id') === currentId) {
+                        $(this).addClass('active_my');
+                        return false;
+                    }
+                });
+            }
+        }
+
+        // 监听窗口滚动事件，节流 50ms 避免高频触发
+        $(window).on('scroll', function () {
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(updateActiveToc, 50);
+        });
+
+        // ===== 点击li：平滑滚动 + 立即设置active_my（过程中不切换）=====
         $toc.on('click', 'li', function (e) {
             e.preventDefault();
             var $thisLi = $(this);
@@ -244,13 +357,19 @@
             var $target = $(anchorId);
             if (!$target.length) return;
 
-            // 1. 高亮：当前li加active_my，其他兄弟移除
+            // 1. 立即高亮当前点击项（过程中不再被 scroll spy 覆盖）
             $thisLi.addClass('active_my').siblings().removeClass('active_my');
 
-            // 2.平滑滚动到标题，留出顶部导航栏60px偏移
+            // 2. 标记为"点击滚动中"，scroll spy 暂停
+            isClickScrolling = true;
+
+            // 3. 平滑滚动到目标标题，留出顶部导航栏 60px 偏移
             $('html, body').animate({
                 scrollTop: $target.offset().top - 60
-            }, 200);
+            }, 200, function () {
+                // 动画结束后，恢复 scroll spy
+                isClickScrolling = false;
+            });
         });
     });
 

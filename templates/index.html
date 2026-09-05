@@ -12,31 +12,60 @@
 
 {% block css %}
 <style>
-    .filter-link { display:block; padding:6px 10px; color:#555; }
-    .filter-link:hover { background:#f5f5f5; text-decoration:none; }
-    .filter-link.active { background:#337ab7; color:#fff; }
-
-    .rank-item { display:flex; align-items:center; padding:8px 10px; border-bottom:1px solid #f0f0f0; }
-    .rank-item img { width:28px; height:28px; margin-right:8px; }
-    .rank-item .rank-meta { font-size:12px; color:#999; }
-    .rank-item .rank-title { display:block; color:#333; }
-    .rank-item:hover .rank-title { color:#337ab7; }
-
-    .panel { margin-bottom:20px; }
-    .list-group-item { padding:16px 15px; }
-    .article-title { font-size:16px; font-weight:bold; margin:0 0 10px; }
-    .article-middle { display:flex; align-items:flex-start; margin-bottom:10px; }
-    .article-middle .mid-avatar { width:91px; height:91px; flex:0 0 91px; margin-right:14px; }
-    .article-summary {
-        {# 控制了最大高度,超出的部分显示省略号 #}
-        max-height:91px; overflow:hidden; margin:0;
-        color:#666; font-size:13px; line-height:1.6;
-        display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical;
-        text-overflow:ellipsis;
+    {# —— 筛选链接 —— #}
+    .filter-link {
+        display: block; padding: 8px 16px; color: #555; font-size: 13px;
+        border-left: 3px solid transparent; transition: all 0.15s;
     }
-    .article-meta { font-size:12px; }
-    .article-meta img { width:20px; height:20px; border-radius:50%; vertical-align:middle; margin-right:4px; }
-    .article-meta .badge { margin-left:4px; }
+    .filter-link:hover { background: #f5f7fa; text-decoration: none; }
+    .filter-link.active {
+        background: #eef4fc; color: #4a90d9; font-weight: 600;
+        border-left-color: #4a90d9;
+    }
+
+    {# —— 排行项 —— #}
+    .rank-item {
+        display: flex; align-items: center; padding: 10px 14px;
+        border-bottom: 1px solid #f5f5f5; transition: background 0.15s;
+    }
+    .rank-item:hover { background: #f9fafb; }
+    .rank-item img { width: 32px; height: 32px; margin-right: 10px; }
+    .rank-item .rank-meta { font-size: 11px; color: #aaa; }
+    .rank-item .rank-title { display: block; color: #333; font-size: 13px; }
+    .rank-item:hover .rank-title { color: #4a90d9; }
+
+    {# —— 文章列表项 —— #}
+    .article-title { font-size: 17px; font-weight: 600; margin: 0 0 8px; }
+    .article-title a { color: #2c3e50; }
+    .article-title a:hover { color: #4a90d9; }
+    .article-middle { display: flex; align-items: flex-start; margin-bottom: 10px; }
+    .article-middle .mid-avatar {
+        width: 100px; height: 100px; flex: 0 0 100px; margin-right: 16px;
+        border-radius: 8px; object-fit: cover;
+    }
+    .article-summary {
+        max-height: 100px; overflow: hidden; margin: 0;
+        color: #777; font-size: 13px; line-height: 1.7;
+        display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+        text-overflow: ellipsis;
+    }
+    .article-meta { font-size: 12px; color: #aaa; }
+    .article-meta img {
+        width: 22px; height: 22px; border-radius: 50%;
+        vertical-align: middle; margin-right: 5px;
+    }
+    .article-meta .badge { margin-left: 4px; }
+
+
+    .article-list .list-group-item {
+        margin: 6px 0 !important;
+        border: 1px solid #f0f0f0 !important;
+        border-radius: 6px !important;
+    }
+
+    {# —— 搜索框 —— #}
+    .input-group .form-control { border-right: 0; }
+    .input-group-btn .btn { border-left: 0; border-color: #e0e0e0; }
 </style>
 {% endblock %}
 
@@ -45,7 +74,7 @@
     <div class="row">
 
         {# ========== 左栏：全站分类 + 我的 ========== #}
-        <div class="col-md-3">
+        <div class="col-md-3" style="position: sticky;top: 71px">
             <div class="panel panel-default">
                 <div class="panel-heading"><strong>全站分类</strong></div>
                 <div class="panel-body" style="padding:0;">
@@ -98,18 +127,23 @@
                     {% elif filter_type == 'my_comment' %}我评论过的文章
                     {% else %}最新文章{% endif %}
                 </div>
-                <ul class="list-group">
-                    {% for a in articles %}
+                <ul class="list-group article-list">
+                    {# 分页后使用 page_obj 遍历当前页的文章 #}
+                    {% for a in page_obj %}
                         <li class="list-group-item">
                             {# 顶部：标题 #}
                             <p class="article-title">
                                 <a href="/index/{{ a.blog.user.username }}/p/{{ a.id }}/">{{ a.title }}</a>
                             </p>
-                            {# 中部：头像 + 摘要 #}
+                            {# 中部：封面/头像 + 摘要 #}
+                            {# 封面逻辑：有上传封面则用封面，无封面则回退用作者头像 #}
                             <div class="article-middle">
                                 <a href="/index/{{ a.blog.user.username }}/">
-                                    <img src="{{ a.blog.user.avatar.url }}"
-                                         width="91" height="91" class="mid-avatar">
+                                    {% if a.cover %}
+                                        <img src="{{ a.cover.url }}" width="91" height="91" class="mid-avatar">
+                                    {% else %}
+                                        <img src="{{ a.blog.user.avatar.url }}" width="91" height="91" class="mid-avatar">
+                                    {% endif %}
                                 </a>
                                 <p class="article-summary">{{ a.content|plain_text|truncatechars:160 }}</p>
                             </div>
@@ -135,11 +169,54 @@
                         </li>
                     {% endfor %}
                 </ul>
+
+                {# ========== 分页导航条 ========== #}
+                {# 仅在总页数 > 1 时显示分页 #}
+                {% if page_obj.paginator.num_pages > 1 %}
+                <div class="text-center" style="padding:10px 0;">
+                    <nav>
+                        <ul class="pagination" style="margin:0;">
+                            {# 上一页 #}
+                            {% if page_obj.has_previous %}
+                                <li>
+                                    <a href="?page={{ page_obj.previous_page_number }}{% if filter_type == 'cat' %}&type=cat&id={{ filter_id }}{% elif filter_type == 'my_up' %}&type=my_up{% elif filter_type == 'my_comment' %}&type=my_comment{% elif filter_type == 'search' %}&type=search&q={{ request.GET.q }}{% endif %}">&laquo;</a>
+                                </li>
+                            {% else %}
+                                <li class="disabled"><span>&laquo;</span></li>
+                            {% endif %}
+
+                            {# 页码 #}
+                            {% for num in page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="active"><span>{{ num }}</span></li>
+                                {% else %}
+                                    <li>
+                                        <a href="?page={{ num }}{% if filter_type == 'cat' %}&type=cat&id={{ filter_id }}{% elif filter_type == 'my_up' %}&type=my_up{% elif filter_type == 'my_comment' %}&type=my_comment{% elif filter_type == 'search' %}&type=search&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {# 下一页 #}
+                            {% if page_obj.has_next %}
+                                <li>
+                                    <a href="?page={{ page_obj.next_page_number }}{% if filter_type == 'cat' %}&type=cat&id={{ filter_id }}{% elif filter_type == 'my_up' %}&type=my_up{% elif filter_type == 'my_comment' %}&type=my_comment{% elif filter_type == 'search' %}&type=search&q={{ request.GET.q }}{% endif %}">&raquo;</a>
+                                </li>
+                            {% else %}
+                                <li class="disabled"><span>&raquo;</span></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {# 当前页/总页数提示 #}
+                    <p class="text-muted" style="font-size:12px;">
+                        第 {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 页 · 共 {{ page_obj.paginator.count }} 篇文章
+                    </p>
+                </div>
+                {% endif %}
             </div>
         </div>
 
         {# ========== 右栏：搜索 + 最新 + 热榜 ========== #}
-        <div class="col-md-3">
+        <div class="col-md-3" style="position: sticky;top: 71px">
             <div class="panel panel-default">
                 <div class="panel-heading"><strong>搜索文章</strong></div>
                 <div class="panel-body">
@@ -181,7 +258,7 @@
                             <img src="{{ a.blog.user.avatar.url }}" class="img-circle">
                             <div>
                                 <span class="rank-meta">{{ a.blog.user.username }}
-                                    <span class="badge" style="margin-left:4px;background: #d9534f">{{ a.up_num }}赞</span>
+                                    <span class="badge" style="margin-left:4px;background:#ff7e5f;color:#fff;">{{ a.up_num }} 赞</span>
                                 </span>
                                 <span class="rank-title">{{ a.title|truncatechars:14 }}</span>
                             </div>

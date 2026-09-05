@@ -52,3 +52,29 @@ def md_safe(value):
     html = _ON_ATTR.sub('', html)           # 剥离 onXxx 事件属性
     html = _JS_PROTO.sub(r'\1=\2', html)    # 把 javascript:/vbscript:/data: 协议改写为空
     return mark_safe(html)
+
+
+# ==================== at_mark：评论内容中 @用户名 高亮 ====================
+# 匹配评论内容开头的 "@用户名 "，将其包裹在 <span class="at-mention"> 中渲染
+_AT_PATTERN = re.compile(r'^(@\S+)\s')
+
+
+@register.filter(name='at_mark')
+def at_mark(value):
+    """将评论内容开头的 @用户名 标记为高亮 span。
+
+    入参：value - 评论文本（可能以 "@用户名 " 开头）
+    返回：SafeString，@用户名 部分被 <span class="at-mention"> 包裹
+    说明：用于子评论回复时，@部分以特殊颜色展示，其余内容正常显示。
+    """
+    if not value:
+        return ''
+    text = str(value)
+    match = _AT_PATTERN.match(text)
+    if match:
+        at_part = match.group(1)                    # @用户名
+        rest = text[match.end():]                   # 剩余正文
+        return mark_safe(
+            '<span class="at-mention">{}</span> {}'.format(at_part, rest)
+        )
+    return text

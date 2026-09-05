@@ -4,13 +4,24 @@
 {% block content %}
 <div class="panel panel-default">
     <div class="panel-heading"><strong>新增文章</strong></div>
-    <div class="panel-body">
+    <div class="panel-body" style="padding:28px;">
         {# enctype=multipart/form-data：支持上传 .md 文件 #}
         <form id="articleForm" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="form-group">
                 <label>标题</label>
                 <input type="text" name="title" class="form-control" placeholder="请输入文章标题">
+            </div>
+
+            {# 文章封面：可选上传，不上传则首页/站点用作者头像展示 #}
+            <div class="form-group">
+                <label>文章封面（可选）</label>
+                <input type="file" name="cover" accept="image/*">
+                <p class="text-muted" style="font-size:12px;">不上传封面时，列表页将默认使用作者头像作为封面展示。</p>
+                {# 封面预览图 #}
+                <div style="margin-top:10px;">
+                    <img id="coverPreview" src="" width="91" height="91" class="img-thumbnail" style="display:none;">
+                </div>
             </div>
 
             <div class="form-group">
@@ -52,7 +63,18 @@
 {% block js %}
 {{ block.super }}
 <script>
-// 发布：FormData + AJAX（含可能的 .md 文件）
+// 发布：FormData + AJAX（含可能的 .md 文件 + 封面图片）
+    // 封面文件选择后即时预览
+    $('input[name="cover"]').change(function () {
+        var file = this.files[0];
+        if (!file) { $('#coverPreview').hide(); return; }
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            $('#coverPreview').attr('src', e.target.result).show();
+        };
+        reader.readAsDataURL(file);
+    });
+
     $('#saveBtn').click(function () {
         let formData = new FormData($('#articleForm')[0]);
         $.ajax({

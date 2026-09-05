@@ -4,12 +4,28 @@
 {% block content %}
 <div class="panel panel-default">
     <div class="panel-heading"><strong>编辑文章</strong></div>
-    <div class="panel-body">
+    <div class="panel-body" style="padding:28px;">
         <form id="articleForm" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="form-group">
                 <label>标题</label>
                 <input type="text" name="title" class="form-control" value="{{ article.title }}">
+            </div>
+
+            {# 文章封面：可选上传；已上传则显示当前封面，新上传则替换 #}
+            <div class="form-group">
+                <label>文章封面（可选）</label>
+                <input type="file" name="cover" accept="image/*">
+                <p class="text-muted" style="font-size:12px;">不上传新封面时保留原封面；原无封面则列表页使用作者头像。</p>
+                {# 当前封面预览：有封面则显示封面，无则显示作者头像 #}
+                <div style="margin-top:10px;">
+                    <label class="text-muted" style="font-size:12px;">当前封面：</label><br>
+                    {% if article.cover %}
+                        <img id="coverPreview" src="{{ article.cover.url }}" width="91" height="91" class="img-thumbnail">
+                    {% else %}
+                        <img id="coverPreview" src="{{ request.user.avatar.url }}" width="91" height="91" class="img-thumbnail">
+                    {% endif %}
+                </div>
             </div>
 
             <div class="form-group">
@@ -61,7 +77,18 @@
 {% block js %}
 {{ block.super }}
 <script>
-    // 保存修改：FormData + AJAX
+    // 封面文件选择后即时预览（替换当前预览图）
+    $('input[name="cover"]').change(function () {
+        var file = this.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            $('#coverPreview').attr('src', e.target.result);
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // 保存修改：FormData + AJAX（含可能的封面图片）
     $('#saveBtn').click(function () {
         let formData = new FormData($('#articleForm')[0]);
         $.ajax({

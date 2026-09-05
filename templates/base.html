@@ -9,13 +9,15 @@
     <title>{% block title %}瓜子BBS博客系统{% endblock %}</title>
     {# Bootstrap3 CSS #}
     <link rel="stylesheet" href="{% static 'bootstrap-3.4.1-dist/css/bootstrap.min.css' %}">
+    {# 全局自定义样式 #}
+    <link rel="stylesheet" href="{% static 'css/a.css' %}">
     {# 子模板可追加 CSS #}
     {% block css %}{% endblock %}
 </head>
 <body>
 
-{# ========= 顶部导航栏 ========= #}
-<nav class="navbar navbar-default navbar-static-top">
+{# ========= 顶部导航栏（固定在窗口顶部）========= #}
+<nav class="navbar navbar-default navbar-fixed-top navbar-bbs">
     <div class="container">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
@@ -67,7 +69,7 @@
 <div class="container">
     <div class="row">
         {# 左边 分类区域#}
-        <div class="col-md-2">{% block left %}{% endblock %}</div>
+        <div class="col-md-2" >{% block left %}{% endblock %}</div>
         {# 中间 内容区域#}
         <div class="col-md-8">{% block content %}{% endblock %}</div>
         {# 右边 侧边栏区域#}

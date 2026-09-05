@@ -76,6 +76,11 @@ class User(AbstractUser, BaseModel):
         verbose_name='性别', choices=GENDER_CHOICES, default=3
     )
     phone = models.CharField(verbose_name='手机号', max_length=11, default='', blank=True)
+    # 个性签名：个人站点资料卡片展示，默认“用户未设置签名”
+    signature = models.CharField(
+        verbose_name='个性签名', max_length=128,
+        default='用户未设置签名', blank=True
+    )
     # 头像：上传到 media/avatar 下
     avatar = models.ImageField(
         verbose_name='头像', upload_to='avatar', default='avatar/default.png'
@@ -142,6 +147,12 @@ class Article(BaseModel):
     """content 存原始 Markdown 文本；正文渲染由后端 markdown 库转 HTML。"""
     title = models.CharField(verbose_name='文章标题', max_length=128)
     content = models.TextField(verbose_name='文章内容(Markdown)')
+    # 文章封面图片：用户在后台发布/编辑文章时可选择上传封面图片
+    # 上传到 media/article_cover/ 目录下；default='' 表示默认无封面
+    # 前端展示逻辑：有封面则用封面，无封面则回退用作者头像
+    cover = models.ImageField(
+        verbose_name='文章封面', upload_to='article_cover', default='', blank=True
+    )
     # 冗余计数字段：点赞数量，直接读取字段值展示，避免业务频繁执行count()统计，提升查询性能
     up_num = models.IntegerField(verbose_name='点赞数', default=0)
     down_num = models.IntegerField(verbose_name='点踩数', default=0)
@@ -219,6 +230,13 @@ class Comment(BaseModel):
     parent = models.ForeignKey(
         to='self', verbose_name='父评论', on_delete=models.CASCADE,
         null=True, blank=True, related_name='children'
+    )
+    # 回复目标用户：子评论（回复）时，记录被回复的用户是谁
+    # 用于前端展示 "@用户名" 功能；根评论时该字段为 None
+    # related_name='reply_comments' 反向查询：user.reply_comments 获取该用户被回复的所有评论
+    reply_to = models.ForeignKey(
+        to='User', verbose_name='回复目标用户', on_delete=models.CASCADE,
+        null=True, blank=True, related_name='reply_comments'
     )
 
     class Meta:

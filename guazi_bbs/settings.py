@@ -145,11 +145,13 @@ USE_TZ = False   # 使用本地时间存库，便于调试阅读
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 # ============== 12. 静态文件配置 STATIC_URL (新增 static 目录和 URL 前缀)==============
-STATIC_URL = 'static/'
+# STATIC_URL 必须以 / 开头，否则模板中 {% static %} 生成的路径无法正常访问
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 # ============== 静态文件配置 STATIC_ROOT (新增 static_collected 目录)==============
+# collectstatic 收集到此目录，供生产环境 Nginx/Apache 直接访问
 STATIC_ROOT = BASE_DIR / 'static_collected'
 
 
